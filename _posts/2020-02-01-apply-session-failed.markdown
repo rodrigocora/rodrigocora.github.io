@@ -2,7 +2,7 @@
 layout: post
 title:  "ApplySession failed but Oracle Home has not been modified.null"
 date:   2020-02-01 08:10:00 +0000
-categories: upgrades
+categories: oracle patch upgrad
 ---
 
 While applying the patch  27006180 to a Grid Home I've faced this awefuly generic error.
