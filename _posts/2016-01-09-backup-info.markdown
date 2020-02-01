@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Queries to get info about rman backups"
-date:   2018-01-09 15:00:00 +0000
+date:   2016-01-09 15:00:00 +0000
 categories: rman
 ---
 
@@ -74,12 +74,15 @@ select s.client_info,
          aio.long_wait_pct
  FROM v$session_longops l,
          v$session s,
-        (  SELECT sid,
-                   serial,
-                   round(100 * SUM (long_waits) / SUM (io_count),2) AS "LONG_WAIT_PCT",
-                   round(SUM (effective_bytes_per_second) / 1024 / 1024,2) AS "MB_PER_S"
-              FROM v$backup_async_io
-          GROUP BY sid, serial) aio
+        (  SELECT 
+                sid,
+                serial,
+                round(100 * SUM (long_waits) / SUM (io_count),2) AS "LONG_WAIT_PCT",
+                round(SUM (effective_bytes_per_second) / 1024 / 1024,2) AS "MB_PER_S"
+            FROM 
+                v$backup_async_io
+          GROUP BY 
+                sid, serial) aio
    WHERE     aio.sid = s.sid
          AND aio.serial = s.serial#
          AND l.opname LIKE 'RMAN%'
