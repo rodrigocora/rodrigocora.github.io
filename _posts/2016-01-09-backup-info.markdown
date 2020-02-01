@@ -2,7 +2,7 @@
 layout: post
 title:  "Queries to get info about rman backups"
 date:   2016-01-09 15:00:00 +0000
-categories: rman
+categories: oracle rman
 ---
 
 There's nothing much to explain, it's just the queries I use to check to backup for whatever reason I need to.
