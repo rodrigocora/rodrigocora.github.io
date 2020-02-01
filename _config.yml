@@ -18,11 +18,11 @@
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
 
-title: Script repo
+title: Yet another DBA Blog
 email: rodrigo.correia@pm.me
 description: >- # this means to ignore newlines until "baseurl:"
-  This a blog to post things I'm learning, and will be used as my personal
-  script repository.
+  My script repo
+author: Rodrigo Correia
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "https://rodrigocora.github.io/" # the base hostname & protocol for your site, e.g. http://example.com
 # twitter_username: jekyllrb
