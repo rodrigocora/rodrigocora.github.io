@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Kill oracle sessions"
-date:   2016-01-09 15:00:00 +0000
+date:   2015-06-22 15:00:00 +0000
 categories: oracle session
 ---
 
