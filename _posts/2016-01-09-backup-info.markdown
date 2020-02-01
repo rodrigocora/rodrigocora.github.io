@@ -38,7 +38,9 @@ SELECT * FROM GV$RMAN_OUTPUT WHERE SESSION_KEY = 44755;
 ```
 SELECT
     ctime   "Date",
-    DECODE(backup_type, 'L', 'Archive Log', 'D', 'Full', 'Incremental') backup_type,
+    DECODE(backup_type, 'L', 'Archive Log', 
+                        'D', 'Full', 
+                        'Incremental') backup_type,
     bsize   "Size MB"
 FROM
     (
@@ -58,8 +60,7 @@ FROM
             backup_type
     )
 ORDER BY
-    1,
-2;
+    1, 2;
 ```
 
 #### Backup throughput
@@ -74,14 +75,14 @@ select s.client_info,
          aio.long_wait_pct
  FROM v$session_longops l,
          v$session s,
-        (  SELECT 
-                sid,
-                serial,
-                round(100 * SUM (long_waits) / SUM (io_count),2) AS "LONG_WAIT_PCT",
-                round(SUM (effective_bytes_per_second) / 1024 / 1024,2) AS "MB_PER_S"
-            FROM 
-                v$backup_async_io
-          GROUP BY 
+        (SELECT 
+            sid,
+            serial,
+            round(100 * sum (long_waits) sum(io_count),2) as "LONG_WAIT_PCT",
+            round(sum (effective_bytes_per_second)/1024/1024,2) as "MB_PER_S"
+        FROM 
+            v$backup_async_io
+        GROUP BY 
                 sid, serial) aio
    WHERE     aio.sid = s.sid
          AND aio.serial = s.serial#
