@@ -30,20 +30,26 @@ SELECT
     || DECODE(OBJECT_TYPE, 
                 'PACKAGE BODY',
                 'PACKAGE', OBJECT_TYPE)
-    || '  ' 
+    || ' ' 
     || OWNER 
     || '.' 
     || OBJECT_NAME 
     || DECODE(OBJECT_TYPE, 
             ' PACKAGE BODY ', 
             ' COMPILE BODY; ',
-            '  COMPILE; ')
+            ' COMPILE; ') as cmd
 FROM
 	DBA_OBJECTS
 WHERE
 	STATUS != 'VALID'
-	AND OBJECT_TYPE != 'SYNONYM'
 	AND OWNER NOT IN ('SYS',
 	'SYSTEM',
 	'OLAPSYS');
 ```
+
+Or
+
+```
+EXEC UTL_RECOMP.RECOMP_PARALLEL(<X>);
+```
+Where <X> is the degree of parallelism.
