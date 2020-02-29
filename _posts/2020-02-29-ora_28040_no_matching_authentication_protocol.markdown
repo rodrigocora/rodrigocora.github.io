@@ -15,10 +15,11 @@ CREATE OR REPLACE VIEW XKSUSECON
 AS
     SELECT * FROM SYS.x$ksusecon;
 
-GRANT SELECT ON XKSUSECON TO MON;
-GRANT SELECT ON GV_$SESSION TO MON;
+GRANT SELECT ON XKSUSECON TO <SCHEMA_NAME>;
 
-CREATE OR REPLACE VIEW MON.CONN_JDBC_VERSION
+GRANT SELECT ON GV_$SESSION TO <SCHEMA_NAME>;
+
+CREATE OR REPLACE VIEW <SCHEMA_NAME>.CONN_JDBC_VERSION
 AS
     WITH
         x
@@ -54,11 +55,6 @@ AS
            s.machine
       FROM x, gv$session s
      WHERE x.sid LIKE s.sid AND TYPE != 'BACKGROUND';
-
-EXIT;
 ```
-
-
-
 
  My goal is to avoid having to set the `sqlnet.allowed_logon_version_server` parameter to a lower version compatible version.
