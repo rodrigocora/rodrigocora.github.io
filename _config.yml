@@ -21,7 +21,7 @@
 title: Yet another DBA Blog
 email: rodrigo.correia@pm.me
 description: >- # this means to ignore newlines until "baseurl:"
-  The main goal of this blog is to store scripts and tutorials that've helped me and maybe help some lost soul looking for solution for a problem I'd faced already. The second goal is to help me improve my English skills, so some errors are expected.
+  Just a blog to store some scripts and tutorials.
 author: Rodrigo Correia
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "https://rodrigocora.github.io/" # the base hostname & protocol for your site, e.g. http://example.com
