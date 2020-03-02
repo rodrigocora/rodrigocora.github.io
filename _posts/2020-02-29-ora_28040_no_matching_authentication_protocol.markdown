@@ -6,7 +6,7 @@ categories: oracle session jdbc
 ---
 
 
-I order to prevent the error `ORA-28040: No matching authentication protocol` that I've faced after upgrading some databases I've looked up and found [here](http://marcel.vandewaters.nl/oracle/database-oracle/determine-versions-of-connected-oracle-clients) a query to identify and upgrade the driver before upgrade the database. I've created a view as follows to facilate the access to this information.
+I order to prevent the error `ORA-28040: No matching authentication protocol` that I've faced after upgrading some databases I've looked around and found [here](http://marcel.vandewaters.nl/oracle/database-oracle/determine-versions-of-connected-oracle-clients) a query to identify the version of the client connected to the database. I've created a view as follows to facilate the access to this information.
 
 
 
@@ -57,4 +57,4 @@ AS
      WHERE x.sid LIKE s.sid AND TYPE != 'BACKGROUND';
 ```
 
- My goal is to avoid having to set the `sqlnet.allowed_logon_version_server` parameter to a lower version compatible version.
+ My goal is to avoid setting the `sqlnet.allowed_logon_version_server` parameter to a lower version version.
