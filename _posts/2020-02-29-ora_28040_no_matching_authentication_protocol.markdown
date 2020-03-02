@@ -57,4 +57,4 @@ AS
      WHERE x.sid LIKE s.sid AND TYPE != 'BACKGROUND';
 ```
 
- My goal is to avoid setting the `sqlnet.allowed_logon_version_server` parameter to a lower version value.
+ My goal is to avoid setting the `sqlnet.allowed_logon_version_server` parameter to a lower value.
