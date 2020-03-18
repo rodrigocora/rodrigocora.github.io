@@ -5,7 +5,7 @@ date:   2020-03-18 22:00:00 +0000
 categories: oracle rac
 ---
 
-Just a simple script o extract the add service command from a working cluster. I needed this because I of a request to add the same services to a new cluster in a similar environment.
+Just a simple script o extract the add service command from a working cluster. I needed this because of a request to add the same services to a new cluster in a similar environment.
 
 
 ```
