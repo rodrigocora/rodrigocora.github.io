@@ -26,25 +26,30 @@ SET PAGESIZE 300
 SET LINESIZE 300
 
 SELECT
-    'ALTER ' 
-    || DECODE(OBJECT_TYPE, 
-                'PACKAGE BODY',
-                'PACKAGE', OBJECT_TYPE)
-    || ' ' 
-    || OWNER 
-    || '.' 
-    || OBJECT_NAME 
-    || DECODE(OBJECT_TYPE, 
-            ' PACKAGE BODY ', 
-            ' COMPILE BODY; ',
-            ' COMPILE; ') as cmd
+    'ALTER ' || 
+    CASE
+        WHEN OBJECT_TYPE LIKE '%BODY' THEN TRIM(REGEXP_SUBSTR(OBJECT_TYPE, '.*\s'))
+        WHEN OBJECT_TYPE = 'SYNONYM' AND OWNER = 'PUBLIC' THEN 'PUBLIC ' || OBJECT_TYPE
+    ELSE
+        OBJECT_TYPE
+    END   
+     || ' ' ||
+    CASE 
+        WHEN OWNER != 'PUBLIC' THEN '"' || OWNER || '".'
+    ELSE
+        ''
+    END
+    || '"' || OBJECT_NAME || '"' || 
+    CASE
+        WHEN OBJECT_TYPE LIKE '%BODY' THEN ' COMPILE BODY'
+    ELSE
+        ' COMPILE'
+    END || ';'
 FROM
 	DBA_OBJECTS
 WHERE
 	STATUS != 'VALID'
-	AND OWNER NOT IN ('SYS',
-	'SYSTEM',
-	'OLAPSYS');
+ORDER BY OBJECT_TYPE;
 ```
 
 Or
