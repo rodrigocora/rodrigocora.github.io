@@ -13,7 +13,7 @@ ORACLE_UNQNAME=<db_unique_name>
 
 for service_name in `srvctl status service -d ${ORACLE_UNQNAME} | cut -d' ' -f2`; do 
     srvctl config service -d ${ORACLE_UNQNAME} -s $service_name  | grep -E 'Preferred|Available|Service name' | cut -d' ' -f3 | paste -sd ' ' | while read -r srv_name preferred available; do
-        echo srvctl add service -d ${ORACLE_UNQNAME} -s $srv_name
+        echo srvctl add service -d ${ORACLE_UNQNAME} -s $srv_name -r ${preferred} -a ${available}
         echo srvctl start service -d ${ORACLE_UNQNAME} -s $srv_name
     done
 done
