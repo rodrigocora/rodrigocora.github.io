@@ -24,7 +24,7 @@ done
 Relocate services to the first preferred instance
 
 ```
-ORACLE_UNQNAME=DAMARA
+ORACLE_UNQNAME=<db_unique_name>
 
 echo > /tmp/services_list.tmp
 for service_name in `srvctl status service -d ${ORACLE_UNQNAME} | cut -d' ' -f2`; do 
