@@ -1,0 +1,59 @@
+---
+layout: post
+title:  "ORA-1591 - Kill distributed transaction that doesn't appear in DBA_2PC_* tables"
+date:   2020-05-22 16:00:00 +0000
+categories: oracle rac distributed transaction
+update: 2020-05-22 16:00:00 +0000
+---
+
+#### Run this query to indentify if the transaction exists replacing transaction_id with the actual transaction id
+
+```
+SELECT
+    KTUXESTA
+FROM
+    X$KTUXE
+WHERE
+        KTUXESTA != 'INACTIVE'
+    AND KTUXEUSN = SUBSTR('transaction_id', 1, INSTR('transaction_id', '.') - 1);
+```
+
+
+#### Steps to insert a dummy entry in the pending_trans$ and pending_sessions$ tables to be able to commit or rollback the said transaction
+
+```
+ALTER SYSTEM DISABLE DISTRIBUTED RECOVERY;
+
+INSERT INTO PENDING_TRANS$ (
+    LOCAL_TRAN_ID, GLOBAL_TRAN_FMT, GLOBAL_ORACLE_ID, STATE, STATUS, SESSION_VECTOR, RECO_VECTOR, TYPE#, FAIL_TIME, RECO_TIME
+) VALUES (
+    'transaction_id', 306206, 'XXXXXXX.12345.1.2.3', 'prepared', 'P', HEXTORAW('00000001'), HEXTORAW('00000000'), 0, SYSDATE, SYSDATE
+);
+
+INSERT INTO PENDING_SESSIONS$ VALUES (
+    'transaction_id', 1, HEXTORAW('05004F003A1500000104'), 'C', 0, 30258592, '', 146
+);
+
+COMMIT;
+
+COMMIT FORCE 'transaction_id';
+
+DELETE FROM PENDING_TRANS$
+WHERE
+    LOCAL_TRAN_ID = 'transaction_id';
+
+DELETE FROM PENDING_SESSIONS$
+WHERE
+    LOCAL_TRAN_ID = 'transaction_id';
+
+COMMIT;
+
+ALTER SYSTEM ENABLE DISTRIBUTED RECOVERY;
+
+EXEC DBMS_TRANSACTION.PURGE_LOST_DB_ENTRY('transaction_id');
+
+SELECT
+    DBMS_METADATA.GET_DDL('VIEW', 'X$KTUXE', 'SYS')
+FROM
+    DUAL;
+```
