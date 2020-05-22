@@ -6,7 +6,7 @@ categories: oracle rac distributed transaction
 update: 2020-05-22 16:00:00 +0000
 ---
 
-#### Run this query to indentify if the transaction exists replacing transaction_id with the actual transaction id
+Run this query to indentify if the transaction exists replacing transaction_id with the actual transaction id
 
 ```
 SELECT
@@ -19,15 +19,17 @@ WHERE
 ```
 
 
-#### Steps to insert a dummy entry in the pending_trans$ and pending_sessions$ tables to be able to commit or rollback the said transaction
+Steps to insert a dummy entry in the pending_trans$ and pending_sessions$ tables to be able to commit or rollback the said transaction
 
 ```
 ALTER SYSTEM DISABLE DISTRIBUTED RECOVERY;
 
 INSERT INTO PENDING_TRANS$ (
-    LOCAL_TRAN_ID, GLOBAL_TRAN_FMT, GLOBAL_ORACLE_ID, STATE, STATUS, SESSION_VECTOR, RECO_VECTOR, TYPE#, FAIL_TIME, RECO_TIME
+    LOCAL_TRAN_ID, GLOBAL_TRAN_FMT, GLOBAL_ORACLE_ID, STATE, STATUS, SESSION_VECTOR,
+    RECO_VECTOR, TYPE#, FAIL_TIME, RECO_TIME
 ) VALUES (
-    'transaction_id', 306206, 'XXXXXXX.12345.1.2.3', 'prepared', 'P', HEXTORAW('00000001'), HEXTORAW('00000000'), 0, SYSDATE, SYSDATE
+    'transaction_id', 306206, 'XXXXXXX.12345.1.2.3', 'prepared', 'P', HEXTORAW('00000001'),
+    HEXTORAW('00000000'), 0, SYSDATE, SYSDATE
 );
 
 INSERT INTO PENDING_SESSIONS$ VALUES (
