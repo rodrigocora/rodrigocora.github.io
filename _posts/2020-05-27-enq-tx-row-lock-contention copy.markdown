@@ -6,9 +6,8 @@ categories: oracle rac trace
 update: 2014-07-17 15:00:00 +0000
 ---
 
-Generate trace file to identify performance issues:
+Generate trace file to identify performance issues:  
 
-```
 Set an identifier to the session:
 
 `ALTER SESSION SET TRACEFILE_IDENTIFIER='<SOMETHING>';`
