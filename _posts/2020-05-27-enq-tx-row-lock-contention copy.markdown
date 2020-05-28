@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "generate trace file"
+title:  "Generate trace file"
 date:   2014-07-17 15:00:00 +0000
 categories: oracle rac trace
 update: 2014-07-17 15:00:00 +0000
