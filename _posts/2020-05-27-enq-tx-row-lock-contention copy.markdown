@@ -40,14 +40,15 @@ Find the trace file:
 
 ```
 SELECT a.sid,  
-  a.serial#,  
-  a.username,  
-  a.osuser,  
-  b.spid,  
-  b.TRACEFILE  
+    a.serial#,  
+    a.username,  
+    a.osuser,  
+    b.spid,  
+    b.TRACEFILE  
 FROM v$session a,  
-  gv$process b  
-WHERE a.paddr  = b.addr  
-AND a.username = '<USERNAME>'  
+    gv$process b  
+WHERE 
+    a.paddr  = b.addr  
+    AND a.username = '<USERNAME>'  
 ORDER BY a.sid;  
 ```
