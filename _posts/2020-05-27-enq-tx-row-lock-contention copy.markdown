@@ -18,7 +18,7 @@ Enable trace to the current session:
 
 Improve the file readability
 
-`TKPROF <arquivo_origem.trc>  <seu_arq_de_saida.txt>`
+`TKPROF <src_file.trc>  <output_file.txt>`
 
 Disable trace to the current session:
 
@@ -26,15 +26,15 @@ Disable trace to the current session:
 
 Enable trace to another user session:
 
-`EXEC SYS.DBMS_SYSTEM.SET_SQL_TRACE_IN_SESSION( <o_sid> ,  <o_serial#> ,true);`
+`EXEC SYS.DBMS_SYSTEM.SET_SQL_TRACE_IN_SESSION( <O_SID> ,  <O_SERIAL#> ,TRUE);`
 
 Disable trace to another user session:
 
-`EXEC SYS.DBMS_SYSTEM.SET_SQL_TRACE_IN_SESSION( <o_sid> ,  <o_serial#> ,false);`
+`EXEC SYS.DBMS_SYSTEM.SET_SQL_TRACE_IN_SESSION( <O_SID> ,  <O_SERIAL#> ,FALSE);`
 
 Disable trace to another user session with more details:
 
-`EXEC SYS.DBMS_SYSTEM.SET_EV( <sid>, <serial#>,10046,12, '');`
+`EXEC SYS.DBMS_SYSTEM.SET_EV( <SID>, <SERIAL#>,10046,12, '');`
 
 Find the trace file:
 
