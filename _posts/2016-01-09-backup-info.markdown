@@ -78,7 +78,7 @@ select s.client_info,
         (SELECT 
             sid,
             serial,
-            round(100 * sum (long_waits) sum(io_count),2) as "LONG_WAIT_PCT",
+            round(100 * sum (long_waits) + sum(io_count),2) as "LONG_WAIT_PCT",
             round(sum (effective_bytes_per_second)/1024/1024,2) as "MB_PER_S"
         FROM 
             v$backup_async_io
