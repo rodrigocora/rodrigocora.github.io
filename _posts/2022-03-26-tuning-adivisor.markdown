@@ -8,8 +8,8 @@ categories: oracle performance sql
 ```
 SET SERVEROUTPUT ON
 DECLARE
+  v_sql_id VARCHAR2(100) := 'xxxxxxxxxxxxx';
   l_sql_tune_task_id  VARCHAR2(100);
-  v_sql_id VARCHAR2(100) := 'dra848n63d1ts';
   v_tuning_results  clob;
 BEGIN
   BEGIN
@@ -32,10 +32,10 @@ END;
 
 ### Get execution plan of a given sql_id
 ```
-select plan_table_output from table(dbms_xplan.display_cursor('d5x9ujtv1rn6b'));
+select plan_table_output from table(dbms_xplan.display_cursor('xxxxxxxxxxxxx'));
 ```
 
 ### Get execution plan of a given sql_id with variable values
 ```
-select * from table(dbms_xplan.display_cursor(sql_id=>'d5x9ujtv1rn6b', format=>'TYPICAL +peeked_binds'));
+select * from table(dbms_xplan.display_cursor(sql_id=>'xxxxxxxxxxxxx', format=>'TYPICAL +peeked_binds'));
 ```
