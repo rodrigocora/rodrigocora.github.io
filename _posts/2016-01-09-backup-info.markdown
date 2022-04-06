@@ -25,7 +25,7 @@ SELECT
 FROM
     v$rman_backup_job_details
 ORDER BY
-    session_key DESC;
+    session_key ASC;
 ```
 
 #### Check backup log
