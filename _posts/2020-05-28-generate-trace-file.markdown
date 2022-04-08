@@ -52,3 +52,24 @@ WHERE
     AND a.username = '<USERNAME>'  
 ORDER BY a.sid;  
 ```
+
+Trigger to activate trace for a given username
+
+```
+CREATE OR REPLACE TRIGGER USER_TRACE_TRG
+AFTER LOGON ON DATABASE
+BEGIN
+    IF USER = '<USERNAME>'
+  THEN
+    execute immediate 'ALTER SESSION SET TRACEFILE_IDENTIFIER =''SQL_TRACE_''';
+    execute immediate 'ALTER SESSION SET SQL_TRACE=TRUE';
+    execute immediate 'alter session set events ''10046 trace name context forever,level 12''';
+    execute immediate 'alter session set statistics_level=all';
+    execute immediate 'alter session set max_dump_file_size = unlimited';
+  END IF;
+EXCEPTION
+WHEN OTHERS THEN
+NULL;
+END;
+/
+```
