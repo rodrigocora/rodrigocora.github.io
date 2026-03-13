@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Tuning adivisor procedure"
+title:  "Oracle MGMTDB: The Hidden Brain of Your Grid Infrastructure"
 date:   2026-03-09 13:00:00 +0000
 categories: oracle performance sql
 ---
