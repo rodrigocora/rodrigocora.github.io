@@ -125,5 +125,7 @@ BEGIN
         p_http_method => 'GET'
     );
   
-    dbms_output.put_line(dbms_lob.substr(l_resp
+    dbms_output.put_line(dbms_lob.substr(l_response, 1000, 1));
+END;
+/
 ```
