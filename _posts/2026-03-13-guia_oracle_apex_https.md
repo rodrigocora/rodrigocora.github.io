@@ -48,7 +48,7 @@ orapki wallet remove -wallet $ORACLE_HOME/wallet/https_wallet -trusted_cert -pwd
 ```sql
 -- 1. Check current APEX version (Multiple versions might be installed)
 SELECT comp_id, comp_name, version, status 
-FROM dba_re<paragraph></paragraph>gistry 
+FROM dba_registry 
 WHERE comp_id = 'APEX';
 
 -- Note: The principal_name (e.g., APEX_220200) must match the version returned above.
@@ -58,22 +58,59 @@ SET SERVEROUT ON;
 BEGIN
   DBMS_NETWORK_ACL_ADMIN.REMOVE_HOST_ACE(
     host       => 'accounts.google.com',
-    ace        => xs$ace_type(privilege_list => xs$name_list('connect', 'resolve'),
+    ace        => xs$ace_type(privilege_list => xs$name_list('resolve'),
                              principal_name => 'APEX_220200',
                              principal_type => xs_acl.ptype_db));
+  
+  DBMS_NETWORK_ACL_ADMIN.REMOVE_HOST_ACE(
+    host       => 'accounts.google.com',
+    lower_port => 443,
+    upper_port => 443,
+    ace        => xs$ace_type(privilege_list => xs$name_list('connect'),
+                             principal_name => 'APEX_220200',
+                             principal_type => xs_acl.ptype_db));                             
 END;
 /
 COMMIT;
 
 -- 3. Configure Network ACLs
 BEGIN
-  DBMS_NETWORK_ACL_ADMIN.APPEND_HOST_ACE(
-    host       => 'accounts.google.com',
-    lower_port => NULL,
-    upper_port => NULL,
-    ace        => xs$ace_type(privilege_list => xs$name_list('connect', 'resolve'),
-                             principal_name => 'APEX_220200',
-                             principal_type => xs_acl.ptype_db));
+    DBMS_NETWORK_ACL_ADMIN.APPEND_HOST_ACE(
+        host       => '*.gstatic.com',
+        ace        => xs$ace_type(privilege_list => xs$name_list('resolve'),
+                                 principal_name => 'APEX_220200',
+                                 principal_type => xs_acl.ptype_db));
+    DBMS_NETWORK_ACL_ADMIN.APPEND_HOST_ACE(
+        host       => '*.google.com',
+        ace        => xs$ace_type(privilege_list => xs$name_list('resolve'),
+                                 principal_name => 'APEX_220200',
+                                 principal_type => xs_acl.ptype_db));
+    DBMS_NETWORK_ACL_ADMIN.APPEND_HOST_ACE(
+        host       => '*.googleapis.com',
+        ace        => xs$ace_type(privilege_list => xs$name_list('resolve'),
+                                 principal_name => 'APEX_220200',
+                                 principal_type => xs_acl.ptype_db));                             
+    DBMS_NETWORK_ACL_ADMIN.APPEND_HOST_ACE(
+        host       => '*.google.com',
+        lower_port => 443,
+        upper_port => 443,
+        ace        => xs$ace_type(privilege_list => xs$name_list('connect'),
+                                principal_name => 'APEX_220200',
+                                principal_type => xs_acl.ptype_db));
+    DBMS_NETWORK_ACL_ADMIN.APPEND_HOST_ACE(
+        host       => '*.googleapis.com',
+        lower_port => 443,
+        upper_port => 443,
+        ace        => xs$ace_type(privilege_list => xs$name_list('connect'),
+                                 principal_name => 'APEX_220200',
+                                 principal_type => xs_acl.ptype_db));
+    DBMS_NETWORK_ACL_ADMIN.APPEND_HOST_ACE(
+        host       => '*.gstatic.com',
+        lower_port => 443,
+        upper_port => 443,
+        ace        => xs$ace_type(privilege_list => xs$name_list('connect'),
+                                 principal_name => 'APEX_220200',
+                                 principal_type => xs_acl.ptype_db));
   
   -- 4. Grant Wallet permissions (Adjust path to absolute path)
   DBMS_NETWORK_ACL_ADMIN.APPEND_WALLET_ACE(
@@ -104,7 +141,6 @@ END;
 /
 
 -- 6. Define Global Instance Wallet Parameters
--- Requires SYS or SYSTEM privileges. Use absolute path instead of $ORACLE_HOME.
 BEGIN
     -- APEX_INSTANCE_ADMIN.SET_PARAMETER('HTTP_PROXY', 'ProxyHost:Port'); -- If proxy is required
     APEX_INSTANCE_ADMIN.SET_PARAMETER('WALLET_PATH', 'file:/u01/app/oracle/product/version/dbhome_1/wallet/https_wallet');
