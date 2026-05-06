@@ -62,7 +62,48 @@ FROM
 ORDER BY
     1, 2;
 ```
+#### Last backup full size
+```
+SET LINESIZE 180
+SET PAGESIZE 100
+CLEAR COLUMNS
+COLUMN "Data do Full" FORMAT A18 
+COLUMN "Ultimo Backup" FORMAT A18
+COLUMN "Full_Lvl0 (GB)" FORMAT 999,999.99
+COLUMN "Incr_Lvl1 (GB)" FORMAT 999,999.99
+COLUMN "Arch (GB)" FORMAT 999,999.99
+COLUMN "Total do Ciclo (GB)" FORMAT 999,999,999.99
 
+
+WITH ultimo_full AS (
+    SELECT 
+        MAX(bp.completion_time) AS data_full_exata,
+        TRUNC(MAX(bp.completion_time)) AS data_full_dia
+    FROM v$backup_set bs
+    JOIN v$backup_piece bp ON bs.set_stamp = bp.set_stamp AND bs.set_count = bp.set_count
+    WHERE (bs.backup_type = 'D' OR (bs.backup_type = 'I' AND bs.incremental_level = 0))
+      AND bp.status = 'A'
+      AND bp.bytes > 1073741824 -- Ignora arquivos pequenos como controlfiles
+)
+SELECT 
+    TO_CHAR(uf.data_full_exata, 'YYYY-MM-DD HH24:MI') AS "Data do Full",
+    TO_CHAR(MAX(bp.completion_time), 'YYYY-MM-DD HH24:MI') AS "Ultimo Backup",
+    ROUND(SUM(CASE WHEN bs.backup_type = 'D' OR (bs.backup_type = 'I' AND bs.incremental_level = 0) THEN bp.bytes ELSE 0 END) / 1024/1024/1024, 2) AS "Full_Lvl0 (GB)",
+    ROUND(SUM(CASE WHEN bs.backup_type = 'I' AND bs.incremental_level > 0 THEN bp.bytes ELSE 0 END) / 1024/1024/1024, 2) AS "Incr_Lvl1 (GB)",
+    ROUND(SUM(CASE WHEN bs.backup_type = 'L' THEN bp.bytes ELSE 0 END) / 1024/1024/1024, 2) AS "Arch (GB)",
+    ROUND(SUM(bp.bytes) / 1024/1024/1024, 2) AS "Total do Ciclo (GB)"
+FROM 
+    v$backup_set bs
+JOIN 
+    v$backup_piece bp ON bs.set_stamp = bp.set_stamp AND bs.set_count = bp.set_count
+CROSS JOIN 
+    ultimo_full uf
+WHERE 
+    bp.status = 'A'
+    AND TRUNC(bp.completion_time) >= uf.data_full_dia
+GROUP BY 
+    uf.data_full_exata;
+```
 #### Backup throughput
 ```
 select s.client_info,
