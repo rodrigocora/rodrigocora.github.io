@@ -1,0 +1,159 @@
+I"P<h3 id="oracle-apex-https-configuration-guide-google-services">Oracle APEX HTTPS Configuration Guide (Google Services)</h3>
+
+<h4 id="1-infrastructure--os-level-validation-linux-shell">1. Infrastructure &amp; OS Level Validation (Linux Shell)</h4>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 1. Validate if the server has egress access to the URL (Network/DNS/Firewall check)</span>
+curl <span class="nt">-v</span> https://accounts.google.com/.well-known/openid-configuration
+
+<span class="c"># 2. Download certificates</span>
+openssl s_client <span class="nt">-showcerts</span> <span class="nt">-connect</span> accounts.google.com:443 &lt;/dev/null 2&gt;/dev/null | <span class="nb">awk</span> <span class="s1">'/BEGIN CERTIFICATE/{f=1; i++} f{print &gt; ("/tmp/google-" i ".pem")} /END CERTIFICATE/{f=0; close("/tmp/google-" i ".pem")}'</span>
+
+<span class="c"># 3. Create Oracle Wallet if it doesn't exist</span>
+orapki wallet create <span class="nt">-wallet</span> <span class="nv">$ORACLE_HOME</span>/wallet/https_wallet <span class="nt">-auto_login</span> <span class="nt">-pwd</span> MyPassword
+
+<span class="c"># 4. Ensure correct file system permissions</span>
+<span class="nb">chmod </span>600 <span class="nv">$ORACLE_HOME</span>/wallet/https_wallet/<span class="k">*</span>
+
+<span class="c"># 5. Import certificates into the wallet</span>
+orapki wallet add <span class="nt">-wallet</span> <span class="nv">$ORACLE_HOME</span>/wallet/https_wallet <span class="nt">-trusted_cert</span> <span class="nt">-cert</span> /tmp/google-1.pem <span class="nt">-pwd</span> MyPassword
+orapki wallet add <span class="nt">-wallet</span> <span class="nv">$ORACLE_HOME</span>/wallet/https_wallet <span class="nt">-trusted_cert</span> <span class="nt">-cert</span> /tmp/google-2.pem <span class="nt">-pwd</span> MyPassword
+orapki wallet add <span class="nt">-wallet</span> <span class="nv">$ORACLE_HOME</span>/wallet/https_wallet <span class="nt">-trusted_cert</span> <span class="nt">-cert</span> /tmp/google-3.pem <span class="nt">-pwd</span> MyPassword
+
+<span class="c"># 6. Verify imported certificates</span>
+orapki wallet display <span class="nt">-wallet</span> <span class="nv">$ORACLE_HOME</span>/wallet/https_wallet <span class="nt">-pwd</span> <span class="s2">"MyPassword"</span> <span class="nt">-complete</span>
+
+<span class="c"># 7. Extract Serial Number without ":" (Optional)</span>
+orapki wallet display <span class="nt">-wallet</span> <span class="nv">$ORACLE_HOME</span>/wallet/https_wallet <span class="nt">-pwd</span> <span class="s2">"MyPassword"</span> <span class="nt">-complete</span> | <span class="nb">grep </span>Serial | <span class="nb">tr</span> <span class="nt">-d</span> <span class="s1">':'</span>
+
+<span class="c"># 8. Remove incorrect entry from wallet (Optional)</span>
+<span class="c"># If using the serial number, remember to remove the ":" characters</span>
+orapki wallet remove <span class="nt">-wallet</span> <span class="nv">$ORACLE_HOME</span>/wallet/https_wallet <span class="nt">-trusted_cert</span> <span class="nt">-pwd</span> <span class="s2">"MyPassword"</span> <span class="nt">-dn</span> <span class="s2">"CN=accounts.google.com"</span>
+
+<span class="c"># 9. RAC/Cluster Note:</span>
+<span class="c"># Copy the wallet to all cluster nodes, maintaining the exact same path and permissions.</span>
+</code></pre></div></div>
+
+<hr />
+
+<h4 id="2-database--apex-configuration-sqlplsql">2. Database &amp; APEX Configuration (SQL/PLSQL)</h4>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">-- 1. Check current APEX version (Multiple versions might be installed)</span>
+<span class="k">SELECT</span> <span class="n">comp_id</span><span class="p">,</span> <span class="n">comp_name</span><span class="p">,</span> <span class="k">version</span><span class="p">,</span> <span class="n">status</span> 
+<span class="k">FROM</span> <span class="n">dba_registry</span> 
+<span class="k">WHERE</span> <span class="n">comp_id</span> <span class="o">=</span> <span class="s1">'APEX'</span><span class="p">;</span>
+
+<span class="c1">-- Note: The principal_name (e.g., APEX_220200) must match the version returned above.</span>
+<span class="k">SET</span> <span class="n">SERVEROUT</span> <span class="k">ON</span><span class="p">;</span>
+
+<span class="c1">-- 2. Clean up existing ACEs to avoid conflicts</span>
+<span class="k">BEGIN</span>
+  <span class="n">DBMS_NETWORK_ACL_ADMIN</span><span class="p">.</span><span class="n">REMOVE_HOST_ACE</span><span class="p">(</span>
+    <span class="k">host</span>       <span class="o">=&gt;</span> <span class="s1">'accounts.google.com'</span><span class="p">,</span>
+    <span class="n">ace</span>        <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">ace_type</span><span class="p">(</span><span class="n">privilege_list</span> <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">name_list</span><span class="p">(</span><span class="s1">'resolve'</span><span class="p">),</span>
+                             <span class="n">principal_name</span> <span class="o">=&gt;</span> <span class="s1">'APEX_220200'</span><span class="p">,</span>
+                             <span class="n">principal_type</span> <span class="o">=&gt;</span> <span class="n">xs_acl</span><span class="p">.</span><span class="n">ptype_db</span><span class="p">));</span>
+  
+  <span class="n">DBMS_NETWORK_ACL_ADMIN</span><span class="p">.</span><span class="n">REMOVE_HOST_ACE</span><span class="p">(</span>
+    <span class="k">host</span>       <span class="o">=&gt;</span> <span class="s1">'accounts.google.com'</span><span class="p">,</span>
+    <span class="n">lower_port</span> <span class="o">=&gt;</span> <span class="mi">443</span><span class="p">,</span>
+    <span class="n">upper_port</span> <span class="o">=&gt;</span> <span class="mi">443</span><span class="p">,</span>
+    <span class="n">ace</span>        <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">ace_type</span><span class="p">(</span><span class="n">privilege_list</span> <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">name_list</span><span class="p">(</span><span class="s1">'connect'</span><span class="p">),</span>
+                             <span class="n">principal_name</span> <span class="o">=&gt;</span> <span class="s1">'APEX_220200'</span><span class="p">,</span>
+                             <span class="n">principal_type</span> <span class="o">=&gt;</span> <span class="n">xs_acl</span><span class="p">.</span><span class="n">ptype_db</span><span class="p">));</span>                             
+<span class="k">END</span><span class="p">;</span>
+<span class="o">/</span>
+<span class="k">COMMIT</span><span class="p">;</span>
+
+<span class="c1">-- 3. Configure Network ACLs</span>
+<span class="k">BEGIN</span>
+    <span class="n">DBMS_NETWORK_ACL_ADMIN</span><span class="p">.</span><span class="n">APPEND_HOST_ACE</span><span class="p">(</span>
+        <span class="k">host</span>       <span class="o">=&gt;</span> <span class="s1">'*.gstatic.com'</span><span class="p">,</span>
+        <span class="n">ace</span>        <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">ace_type</span><span class="p">(</span><span class="n">privilege_list</span> <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">name_list</span><span class="p">(</span><span class="s1">'resolve'</span><span class="p">),</span>
+                                 <span class="n">principal_name</span> <span class="o">=&gt;</span> <span class="s1">'APEX_220200'</span><span class="p">,</span>
+                                 <span class="n">principal_type</span> <span class="o">=&gt;</span> <span class="n">xs_acl</span><span class="p">.</span><span class="n">ptype_db</span><span class="p">));</span>
+    <span class="n">DBMS_NETWORK_ACL_ADMIN</span><span class="p">.</span><span class="n">APPEND_HOST_ACE</span><span class="p">(</span>
+        <span class="k">host</span>       <span class="o">=&gt;</span> <span class="s1">'*.google.com'</span><span class="p">,</span>
+        <span class="n">ace</span>        <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">ace_type</span><span class="p">(</span><span class="n">privilege_list</span> <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">name_list</span><span class="p">(</span><span class="s1">'resolve'</span><span class="p">),</span>
+                                 <span class="n">principal_name</span> <span class="o">=&gt;</span> <span class="s1">'APEX_220200'</span><span class="p">,</span>
+                                 <span class="n">principal_type</span> <span class="o">=&gt;</span> <span class="n">xs_acl</span><span class="p">.</span><span class="n">ptype_db</span><span class="p">));</span>
+    <span class="n">DBMS_NETWORK_ACL_ADMIN</span><span class="p">.</span><span class="n">APPEND_HOST_ACE</span><span class="p">(</span>
+        <span class="k">host</span>       <span class="o">=&gt;</span> <span class="s1">'*.googleapis.com'</span><span class="p">,</span>
+        <span class="n">ace</span>        <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">ace_type</span><span class="p">(</span><span class="n">privilege_list</span> <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">name_list</span><span class="p">(</span><span class="s1">'resolve'</span><span class="p">),</span>
+                                 <span class="n">principal_name</span> <span class="o">=&gt;</span> <span class="s1">'APEX_220200'</span><span class="p">,</span>
+                                 <span class="n">principal_type</span> <span class="o">=&gt;</span> <span class="n">xs_acl</span><span class="p">.</span><span class="n">ptype_db</span><span class="p">));</span>                             
+    <span class="n">DBMS_NETWORK_ACL_ADMIN</span><span class="p">.</span><span class="n">APPEND_HOST_ACE</span><span class="p">(</span>
+        <span class="k">host</span>       <span class="o">=&gt;</span> <span class="s1">'*.google.com'</span><span class="p">,</span>
+        <span class="n">lower_port</span> <span class="o">=&gt;</span> <span class="mi">443</span><span class="p">,</span>
+        <span class="n">upper_port</span> <span class="o">=&gt;</span> <span class="mi">443</span><span class="p">,</span>
+        <span class="n">ace</span>        <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">ace_type</span><span class="p">(</span><span class="n">privilege_list</span> <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">name_list</span><span class="p">(</span><span class="s1">'connect'</span><span class="p">),</span>
+                                <span class="n">principal_name</span> <span class="o">=&gt;</span> <span class="s1">'APEX_220200'</span><span class="p">,</span>
+                                <span class="n">principal_type</span> <span class="o">=&gt;</span> <span class="n">xs_acl</span><span class="p">.</span><span class="n">ptype_db</span><span class="p">));</span>
+    <span class="n">DBMS_NETWORK_ACL_ADMIN</span><span class="p">.</span><span class="n">APPEND_HOST_ACE</span><span class="p">(</span>
+        <span class="k">host</span>       <span class="o">=&gt;</span> <span class="s1">'*.googleapis.com'</span><span class="p">,</span>
+        <span class="n">lower_port</span> <span class="o">=&gt;</span> <span class="mi">443</span><span class="p">,</span>
+        <span class="n">upper_port</span> <span class="o">=&gt;</span> <span class="mi">443</span><span class="p">,</span>
+        <span class="n">ace</span>        <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">ace_type</span><span class="p">(</span><span class="n">privilege_list</span> <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">name_list</span><span class="p">(</span><span class="s1">'connect'</span><span class="p">),</span>
+                                 <span class="n">principal_name</span> <span class="o">=&gt;</span> <span class="s1">'APEX_220200'</span><span class="p">,</span>
+                                 <span class="n">principal_type</span> <span class="o">=&gt;</span> <span class="n">xs_acl</span><span class="p">.</span><span class="n">ptype_db</span><span class="p">));</span>
+    <span class="n">DBMS_NETWORK_ACL_ADMIN</span><span class="p">.</span><span class="n">APPEND_HOST_ACE</span><span class="p">(</span>
+        <span class="k">host</span>       <span class="o">=&gt;</span> <span class="s1">'*.gstatic.com'</span><span class="p">,</span>
+        <span class="n">lower_port</span> <span class="o">=&gt;</span> <span class="mi">443</span><span class="p">,</span>
+        <span class="n">upper_port</span> <span class="o">=&gt;</span> <span class="mi">443</span><span class="p">,</span>
+        <span class="n">ace</span>        <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">ace_type</span><span class="p">(</span><span class="n">privilege_list</span> <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">name_list</span><span class="p">(</span><span class="s1">'connect'</span><span class="p">),</span>
+                                 <span class="n">principal_name</span> <span class="o">=&gt;</span> <span class="s1">'APEX_220200'</span><span class="p">,</span>
+                                 <span class="n">principal_type</span> <span class="o">=&gt;</span> <span class="n">xs_acl</span><span class="p">.</span><span class="n">ptype_db</span><span class="p">));</span>
+  
+  <span class="c1">-- 4. Grant Wallet permissions (Adjust path to absolute path)</span>
+  <span class="n">DBMS_NETWORK_ACL_ADMIN</span><span class="p">.</span><span class="n">APPEND_WALLET_ACE</span><span class="p">(</span>
+    <span class="n">wallet_path</span> <span class="o">=&gt;</span> <span class="s1">'file:/u01/app/oracle/product/version/dbhome_1/wallet/https_wallet'</span><span class="p">,</span>
+    <span class="n">ace</span>         <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">ace_type</span><span class="p">(</span><span class="n">privilege_list</span> <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">name_list</span><span class="p">(</span><span class="s1">'use_client_certificates'</span><span class="p">),</span>
+                             <span class="n">principal_name</span> <span class="o">=&gt;</span> <span class="s1">'APEX_220200'</span><span class="p">,</span>
+                             <span class="n">principal_type</span> <span class="o">=&gt;</span> <span class="n">xs_acl</span><span class="p">.</span><span class="n">ptype_db</span><span class="p">));</span>
+<span class="k">END</span><span class="p">;</span>
+<span class="o">/</span>
+<span class="k">COMMIT</span><span class="p">;</span>
+
+<span class="c1">-- 5. Session-level Test</span>
+<span class="k">DECLARE</span>
+    <span class="n">l_response</span> <span class="k">CLOB</span><span class="p">;</span>
+<span class="k">BEGIN</span>
+    <span class="n">apex_web_service</span><span class="p">.</span><span class="n">g_request_headers</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">name</span> <span class="p">:</span><span class="o">=</span> <span class="s1">'Content-Type'</span><span class="p">;</span>
+    <span class="n">apex_web_service</span><span class="p">.</span><span class="n">g_request_headers</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">value</span> <span class="p">:</span><span class="o">=</span> <span class="s1">'application/json'</span><span class="p">;</span>
+  
+    <span class="n">l_response</span> <span class="p">:</span><span class="o">=</span> <span class="n">apex_web_service</span><span class="p">.</span><span class="n">make_rest_request</span><span class="p">(</span>
+        <span class="n">p_url</span>         <span class="o">=&gt;</span> <span class="s1">'https://accounts.google.com/.well-known/openid-configuration'</span><span class="p">,</span>
+        <span class="n">p_http_method</span> <span class="o">=&gt;</span> <span class="s1">'GET'</span><span class="p">,</span>
+        <span class="n">p_wallet_path</span> <span class="o">=&gt;</span> <span class="s1">'file:/u01/app/oracle/product/version/dbhome_1/wallet/https_wallet'</span><span class="p">,</span>
+        <span class="n">p_wallet_pwd</span>  <span class="o">=&gt;</span> <span class="s1">'MyPassword'</span>
+    <span class="p">);</span>
+  
+    <span class="n">dbms_output</span><span class="p">.</span><span class="n">put_line</span><span class="p">(</span><span class="n">dbms_lob</span><span class="p">.</span><span class="n">substr</span><span class="p">(</span><span class="n">l_response</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1</span><span class="p">));</span>
+<span class="k">END</span><span class="p">;</span>
+<span class="o">/</span>
+
+<span class="c1">-- 6. Define Global Instance Wallet Parameters</span>
+<span class="k">BEGIN</span>
+    <span class="c1">-- APEX_INSTANCE_ADMIN.SET_PARAMETER('HTTP_PROXY', 'ProxyHost:Port'); -- If proxy is required</span>
+    <span class="n">APEX_INSTANCE_ADMIN</span><span class="p">.</span><span class="n">SET_PARAMETER</span><span class="p">(</span><span class="s1">'WALLET_PATH'</span><span class="p">,</span> <span class="s1">'file:/u01/app/oracle/product/version/dbhome_1/wallet/https_wallet'</span><span class="p">);</span>
+    <span class="n">APEX_INSTANCE_ADMIN</span><span class="p">.</span><span class="n">SET_PARAMETER</span><span class="p">(</span><span class="s1">'WALLET_PWD'</span><span class="p">,</span> <span class="s1">'MyPassword'</span><span class="p">);</span>
+    <span class="k">COMMIT</span><span class="p">;</span>
+<span class="k">END</span><span class="p">;</span>
+<span class="o">/</span>
+
+<span class="c1">-- 7. Final Test using Global Instance Settings</span>
+<span class="k">DECLARE</span>
+    <span class="n">l_response</span> <span class="k">CLOB</span><span class="p">;</span>
+<span class="k">BEGIN</span>
+    <span class="n">apex_web_service</span><span class="p">.</span><span class="n">g_request_headers</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">name</span> <span class="p">:</span><span class="o">=</span> <span class="s1">'Content-Type'</span><span class="p">;</span>
+    <span class="n">apex_web_service</span><span class="p">.</span><span class="n">g_request_headers</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">value</span> <span class="p">:</span><span class="o">=</span> <span class="s1">'application/json'</span><span class="p">;</span>
+  
+    <span class="n">l_response</span> <span class="p">:</span><span class="o">=</span> <span class="n">apex_web_service</span><span class="p">.</span><span class="n">make_rest_request</span><span class="p">(</span>
+        <span class="n">p_url</span>         <span class="o">=&gt;</span> <span class="s1">'https://accounts.google.com/.well-known/openid-configuration'</span><span class="p">,</span>
+        <span class="n">p_http_method</span> <span class="o">=&gt;</span> <span class="s1">'GET'</span>
+    <span class="p">);</span>
+  
+    <span class="n">dbms_output</span><span class="p">.</span><span class="n">put_line</span><span class="p">(</span><span class="n">dbms_lob</span><span class="p">.</span><span class="n">substr</span><span class="p">(</span><span class="n">l_response</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1</span><span class="p">));</span>
+<span class="k">END</span><span class="p">;</span>
+<span class="o">/</span>
+</code></pre></div></div>
+:ET

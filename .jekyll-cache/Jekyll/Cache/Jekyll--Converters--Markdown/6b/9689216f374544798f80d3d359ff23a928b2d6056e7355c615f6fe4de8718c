@@ -1,0 +1,11 @@
+I"ð<h3 id="human-readable-ansible-output">Human readable ansible output</h3>
+
+<p>In the current session execute the command below or add it to your .bash_profile/.profile<br />
+<code class="highlighter-rouge">export ANSIBLE_STDOUT_CALLBACK=debug</code></p>
+
+<p><del>Alternatively adding the line below to your <code class="highlighter-rouge">ansible.cfg</code> (default <code class="highlighter-rouge">/etc/ansible/ansible.cfg</code>) also works:<br />
+`stdout_callback = debug</del>`</p>
+
+<p>Alternatively adding the line below to your <code class="highlighter-rouge">ansible.cfg</code> (default <code class="highlighter-rouge">/etc/ansible/ansible.cfg</code>) also works:<br />
+<code class="highlighter-rouge">callback\_result\_format = yaml</code></p>
+:ET

@@ -1,0 +1,118 @@
+I"T<p>We had a situation where a new pdb(19.6.0.0) was created to receive a import from another database(11.2.0.1) that had Oracle Spatial installed and the target database didn’t.
+Weirdly executing a full import to the pdb “installed” a flawed version of the Spatial feature in the CDB. It appeared in the dba_registry and cdb_registry views, but it was invalid.</p>
+
+<p><a href="/assets/2020-09-24-import-full-to-pdb-oracle-spatial-problems_spatial_invalid.jpeg"><img src="/assets/2020-09-24-import-full-to-pdb-oracle-spatial-problems_spatial_invalid.jpeg" alt="" /></a></p>
+
+<p>After a database restart the PDBs opened in restricted session mode, even PDB$SEED.</p>
+
+<p><a href="/assets/2020-09-24-import-full-to-pdb-oracle-spatial-problems_pdb_restricted_yes.jpeg"><img src="/assets/2020-09-24-import-full-to-pdb-oracle-spatial-problems_pdb_restricted_yes.jpeg" alt="" /></a></p>
+
+<p>In the PDB_PLUG_IN_VIOLATIONS view the message was that the 19.6 [30557433] was wrongly applied, which wasn’t true.</p>
+
+<p><a href="/assets/2020-09-24-import-full-to-pdb-oracle-spatial-problems_patches_errors.jpeg"><img src="/assets/2020-09-24-import-full-to-pdb-oracle-spatial-problems_patches_errors.jpeg" alt="" /></a></p>
+
+<table>
+  <tbody>
+    <tr>
+      <td>24/09/2020 12:25:32.720328000 PM</td>
+      <td>DEV2_PDB</td>
+      <td>SQL Patch</td>
+      <td>ERROR</td>
+      <td>0</td>
+      <td>1</td>
+      <td>19.6.0.0.0 Release_Update 1912171550: APPLY with status WITH ERRORS in the CDB</td>
+      <td>RESOLVED</td>
+      <td>Call datapatch to install in the PDB or the CDB</td>
+      <td>3</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>And also this one in a new PDB we created to test the solution:</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td>24/09/2020 14:48:14.779786000 PM</td>
+      <td>DEV2_PLUG</td>
+      <td>OPTION</td>
+      <td>ERROR</td>
+      <td>0</td>
+      <td>1</td>
+      <td>Database option SDO mismatch: PDB installed version 19.0.0.0.0. CDB installed version NULL.</td>
+      <td>RESOLVED</td>
+      <td>Fix the database option in the PDB or the CDB</td>
+      <td>2</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>These are the steps a I took to solve this problem:<br />
+Remove Spatial from CDB then PDBs (the order matters)</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sqlplus / as sysdba
+
+SHUTDOWN IMMEDIATE;
+STARTUP UPGRADE;
+
+@?/md/admin/mddins.sql
+ALTER SESSION SET "_oracle_script"=true;
+DROP USER MDSYS CASCADE;
+DROP USER MDDATA CASCADE;
+
+SET PAGESIZE 0
+SET FEED OFF
+SPOOL dropsyn.sql
+SELECT 'DROP PUBLIC SYNONYM "' || SYNONYM_NAME || '";' 
+FROM DBA_SYNONYMS 
+WHERE TABLE_OWNER='MDSYS';
+SPOOL OFF;
+@dropsyn.sql
+
+EXEC UTL_RECOMP.RECOMP_PARALLEL(10);
+SELECT count(*) FROM DBA_OBJECTS WHERE STATUS != 'VALID';
+
+SHUTDOWN IMMEDIATE;
+STARTUP;
+exit
+</code></pre></div></div>
+
+<p>And now from the PDB (the same commands worked for the PDB$SEED pdb as well)</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sqlplus / as sysdba
+ALTER PLUGGABLE DATABASE DEV2_PDB CLOSE IMMEDIATE;
+ALTER PLUGGABLE DATABASE DEV2_PDB OPEN RESTRICTED;
+
+ALTER SESSION SET CONTAINER=DEV2_PDB;
+@?/md/admin/mddins.sql
+ALTER SESSION SET "_oracle_script"=true;
+DROP USER MDSYS CASCADE;
+DROP USER MDDATA CASCADE;
+
+SET PAGESIZE 0
+SET FEED OFF
+SPOOL dropsyn.sql
+SELECT 'DROP PUBLIC SYNONYM "' || SYNONYM_NAME || '";', OWNER 
+FROM DBA_SYNONYMS 
+WHERE TABLE_OWNER='MDSYS';
+SPOOL OFF;
+@dropsyn.sql
+
+EXEC UTL_RECOMP.RECOMP_PARALLEL(8);
+SELECT COUNT(*) FROM DBA_OBJECTS WHERE STATUS != 'VALID';
+
+ALTER PLUGGABLE DATABASE DEV2_PDB CLOSE IMMEDIATE;
+ALTER PLUGGABLE DATABASE DEV2_PDB OPEN UPGRADE;
+exit
+</code></pre></div></div>
+
+<p><code class="highlighter-rouge">$ datapatch -verbose -pdbs DEV2_PDB</code></p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sqlplus / as sysdba
+ALTER PLUGGABLE DATABASE DEV2_PDB CLOSE IMMEDIATE;
+ALTER PLUGGABLE DATABASE DEV2_PDB OPEN;
+</code></pre></div></div>
+
+<p><a href="/assets/2020-09-24-import-full-to-pdb-oracle-spatial-problems_pdbs_ok_v1.jpeg"><img src="/assets/2020-09-24-import-full-to-pdb-oracle-spatial-problems_pdbs_ok_v1.jpeg" alt="" /></a></p>
+
+:ET

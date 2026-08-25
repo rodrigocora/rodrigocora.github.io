@@ -1,0 +1,705 @@
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.0.1">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2026-07-18T19:23:44+01:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Yet another DBA Blog</title><subtitle>Just a blog to store some scripts and tutorials.</subtitle><author><name>Rodrigo Correia</name></author><entry><title type="html">Integrate ssh_config from wsl2 with powershell</title><link href="http://localhost:4000/windows/wsl2/linux/2026/06/16/share-ssh_config-wsl2-powershell.html" rel="alternate" type="text/html" title="Integrate ssh_config from wsl2 with powershell" /><published>2026-06-16T13:20:00+01:00</published><updated>2026-06-16T13:20:00+01:00</updated><id>http://localhost:4000/windows/wsl2/linux/2026/06/16/share-ssh_config-wsl2-powershell</id><content type="html" xml:base="http://localhost:4000/windows/wsl2/linux/2026/06/16/share-ssh_config-wsl2-powershell.html"><![CDATA[<h3 id="usar-a-diretiva-include-no-windows-recomendado">Usar a diretiva <code class="highlighter-rouge">Include</code> no Windows (Recomendado)</h3>
+
+<p>O cliente OpenSSH embutido no Windows suporta a diretiva <code class="highlighter-rouge">Include</code>, inclusive com caminhos de rede (UNC). Isso evita problemas de permissões no Windows.</p>
+
+<ol>
+  <li>Abra o PowerShell ou o Bloco de Notas no Windows.</li>
+  <li>Edite o arquivo de configuração SSH do Windows:
+    <div class="language-powershell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Open Windows SSH config in notepad</span><span class="w">
+</span><span class="n">notepad</span><span class="w"> </span><span class="nv">$</span><span class="nn">env</span><span class="p">:</span><span class="nv">USERPROFILE</span><span class="nx">\.ssh\config</span><span class="w">
+</span></code></pre></div>    </div>
+  </li>
+  <li>Adicione a seguinte linha no topo do arquivo (ajustando para o seu caminho real):
+    <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code># Include WSL2 SSH config as primary
+Include \\wsl.localhost\Ubuntu\home\&lt;SeuUsuarioLinux&gt;\.ssh\config
+</code></pre></div>    </div>
+  </li>
+  <li>Salve e feche o arquivo.</li>
+</ol>]]></content><author><name>Rodrigo Correia</name></author><category term="windows" /><category term="wsl2" /><category term="linux" /><summary type="html"><![CDATA[Usar a diretiva Include no Windows (Recomendado)]]></summary></entry><entry><title type="html">Share windows ssh-agent keys with wsl2</title><link href="http://localhost:4000/windows/ssh-agent/linux/wsl2/ssh/2026/06/15/ssh-agent_wsl2.html" rel="alternate" type="text/html" title="Share windows ssh-agent keys with wsl2" /><published>2026-06-15T13:20:00+01:00</published><updated>2026-06-15T13:20:00+01:00</updated><id>http://localhost:4000/windows/ssh-agent/linux/wsl2/ssh/2026/06/15/ssh-agent_wsl2</id><content type="html" xml:base="http://localhost:4000/windows/ssh-agent/linux/wsl2/ssh/2026/06/15/ssh-agent_wsl2.html"><![CDATA[<h3 id="1-o-problema-isolamento-do-ssh-agent">1. O problema: Isolamento do SSH Agent</h3>
+<p>O OpenSSH no Windows expõe o agent em um pipe local (<code class="highlighter-rouge">\\.\pipe\openssh-ssh-agent</code>). O WSL2 espera um socket Unix (arquivo <code class="highlighter-rouge">.sock</code>). A solução é conectar os dois.</p>
+
+<h3 id="2-passo-1-baixar-o-npiperelay">2. Passo 1: Baixar o npiperelay</h3>
+<p>O <code class="highlighter-rouge">npiperelay</code> permite que o WSL acesse os pipes do Windows.</p>
+
+<ol>
+  <li>No Windows, crie uma pasta para guardar ferramentas, por exemplo: <code class="highlighter-rouge">C:\tools</code></li>
+  <li>Baixe a versão mais recente do <code class="highlighter-rouge">npiperelay.exe</code> do repositório oficial no GitHub:
+<a href="https://github.com/jstarks/npiperelay/releases">https://github.com/jstarks/npiperelay/releases</a></li>
+  <li>Extraia o arquivo zip e coloque o <code class="highlighter-rouge">npiperelay.exe</code> dentro da pasta <code class="highlighter-rouge">C:\tools</code>.</li>
+</ol>
+
+<h3 id="3-passo-2-instalar-o-socat-no-wsl2">3. Passo 2: Instalar o socat no WSL2</h3>
+<p>O <code class="highlighter-rouge">socat</code> fará o redirecionamento do tráfego do socket Unix para o executável do Windows.</p>
+
+<p>Abra o terminal do WSL2 e execute:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Update package list and install socat</span>
+<span class="nb">sudo </span>apt-get update
+<span class="nb">sudo </span>apt-get <span class="nb">install </span>socat <span class="nt">-y</span>
+</code></pre></div></div>
+
+<h3 id="4-passo-3-configurar-a-ponte-bridge-no-wsl2">4. Passo 3: Configurar a ponte (Bridge) no WSL2</h3>
+<p>Agora vamos dizer ao WSL2 para usar essa ponte sempre que você abrir o terminal.</p>
+
+<ol>
+  <li>No terminal do WSL2, abra o arquivo de configuração do seu shell (geralmente <code class="highlighter-rouge">~/.bashrc</code> ou <code class="highlighter-rouge">~/.zshrc</code>):
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Open bashrc in nano editor</span>
+vi ~/.bashrc
+</code></pre></div>    </div>
+  </li>
+  <li>Adicione o seguinte bloco de código no final do arquivo:
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Define the path to npiperelay.exe on the Windows side</span>
+<span class="nv">NPIPERELAY</span><span class="o">=</span><span class="s2">"/mnt/c/tools/npiperelay.exe"</span>
+   
+<span class="c"># Define where the Unix socket will be created</span>
+<span class="nb">export </span><span class="nv">SSH_AUTH_SOCK</span><span class="o">=</span><span class="nv">$HOME</span>/.ssh/agent.sock
+   
+<span class="c"># Check if socat is already bridging the socket, if not, start it</span>
+<span class="k">if</span> <span class="o">!</span> ps <span class="nt">-x</span> | <span class="nb">grep</span> <span class="nt">-q</span> <span class="s2">"[s]ocat UNIX-LISTEN:</span><span class="nv">$SSH_AUTH_SOCK</span><span class="s2">"</span><span class="p">;</span> <span class="k">then
+    </span><span class="nb">rm</span> <span class="nt">-f</span> <span class="nv">$SSH_AUTH_SOCK</span>
+    <span class="o">(</span>setsid socat UNIX-LISTEN:<span class="nv">$SSH_AUTH_SOCK</span>,fork,umask<span class="o">=</span>077 EXEC:<span class="s2">"</span><span class="nv">$NPIPERELAY</span><span class="s2"> -ei -s //./pipe/openssh-ssh-agent"</span>,pipes &amp;<span class="o">)</span> <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+<span class="k">fi</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>Salve e saia.</p>
+  </li>
+  <li>Recarregue a configuração executando:
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Reload bash configuration</span>
+<span class="nb">source</span> ~/.bashrc
+</code></pre></div>    </div>
+  </li>
+</ol>
+
+<p><strong>Teste:</strong>
+Agora, digite o comando abaixo no WSL2. Ele deve listar as chaves que foram inseridas pelo KeePassXC:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># List keys currently loaded in the SSH agent</span>
+ssh-add <span class="nt">-l</span>
+</code></pre></div></div>]]></content><author><name>Rodrigo Correia</name></author><category term="windows" /><category term="ssh-agent" /><category term="linux" /><category term="wsl2" /><category term="ssh" /><summary type="html"><![CDATA[1. O problema: Isolamento do SSH Agent O OpenSSH no Windows expõe o agent em um pipe local (\\.\pipe\openssh-ssh-agent). O WSL2 espera um socket Unix (arquivo .sock). A solução é conectar os dois.]]></summary></entry><entry><title type="html">Oracle APEX HTTPS Configuration Guide</title><link href="http://localhost:4000/oracle/wallet/https/apex/2026/03/13/guia_oracle_apex_https.html" rel="alternate" type="text/html" title="Oracle APEX HTTPS Configuration Guide" /><published>2026-03-13T10:00:00+00:00</published><updated>2026-03-13T10:00:00+00:00</updated><id>http://localhost:4000/oracle/wallet/https/apex/2026/03/13/guia_oracle_apex_https</id><content type="html" xml:base="http://localhost:4000/oracle/wallet/https/apex/2026/03/13/guia_oracle_apex_https.html"><![CDATA[<h3 id="oracle-apex-https-configuration-guide-google-services">Oracle APEX HTTPS Configuration Guide (Google Services)</h3>
+
+<h4 id="1-infrastructure--os-level-validation-linux-shell">1. Infrastructure &amp; OS Level Validation (Linux Shell)</h4>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 1. Validate if the server has egress access to the URL (Network/DNS/Firewall check)</span>
+curl <span class="nt">-v</span> https://accounts.google.com/.well-known/openid-configuration
+
+<span class="c"># 2. Download certificates</span>
+openssl s_client <span class="nt">-showcerts</span> <span class="nt">-connect</span> accounts.google.com:443 &lt;/dev/null 2&gt;/dev/null | <span class="nb">awk</span> <span class="s1">'/BEGIN CERTIFICATE/{f=1; i++} f{print &gt; ("/tmp/google-" i ".pem")} /END CERTIFICATE/{f=0; close("/tmp/google-" i ".pem")}'</span>
+
+<span class="c"># 3. Create Oracle Wallet if it doesn't exist</span>
+orapki wallet create <span class="nt">-wallet</span> <span class="nv">$ORACLE_HOME</span>/wallet/https_wallet <span class="nt">-auto_login</span> <span class="nt">-pwd</span> MyPassword
+
+<span class="c"># 4. Ensure correct file system permissions</span>
+<span class="nb">chmod </span>600 <span class="nv">$ORACLE_HOME</span>/wallet/https_wallet/<span class="k">*</span>
+
+<span class="c"># 5. Import certificates into the wallet</span>
+orapki wallet add <span class="nt">-wallet</span> <span class="nv">$ORACLE_HOME</span>/wallet/https_wallet <span class="nt">-trusted_cert</span> <span class="nt">-cert</span> /tmp/google-1.pem <span class="nt">-pwd</span> MyPassword
+orapki wallet add <span class="nt">-wallet</span> <span class="nv">$ORACLE_HOME</span>/wallet/https_wallet <span class="nt">-trusted_cert</span> <span class="nt">-cert</span> /tmp/google-2.pem <span class="nt">-pwd</span> MyPassword
+orapki wallet add <span class="nt">-wallet</span> <span class="nv">$ORACLE_HOME</span>/wallet/https_wallet <span class="nt">-trusted_cert</span> <span class="nt">-cert</span> /tmp/google-3.pem <span class="nt">-pwd</span> MyPassword
+
+<span class="c"># 6. Verify imported certificates</span>
+orapki wallet display <span class="nt">-wallet</span> <span class="nv">$ORACLE_HOME</span>/wallet/https_wallet <span class="nt">-pwd</span> <span class="s2">"MyPassword"</span> <span class="nt">-complete</span>
+
+<span class="c"># 7. Extract Serial Number without ":" (Optional)</span>
+orapki wallet display <span class="nt">-wallet</span> <span class="nv">$ORACLE_HOME</span>/wallet/https_wallet <span class="nt">-pwd</span> <span class="s2">"MyPassword"</span> <span class="nt">-complete</span> | <span class="nb">grep </span>Serial | <span class="nb">tr</span> <span class="nt">-d</span> <span class="s1">':'</span>
+
+<span class="c"># 8. Remove incorrect entry from wallet (Optional)</span>
+<span class="c"># If using the serial number, remember to remove the ":" characters</span>
+orapki wallet remove <span class="nt">-wallet</span> <span class="nv">$ORACLE_HOME</span>/wallet/https_wallet <span class="nt">-trusted_cert</span> <span class="nt">-pwd</span> <span class="s2">"MyPassword"</span> <span class="nt">-dn</span> <span class="s2">"CN=accounts.google.com"</span>
+
+<span class="c"># 9. RAC/Cluster Note:</span>
+<span class="c"># Copy the wallet to all cluster nodes, maintaining the exact same path and permissions.</span>
+</code></pre></div></div>
+
+<hr />
+
+<h4 id="2-database--apex-configuration-sqlplsql">2. Database &amp; APEX Configuration (SQL/PLSQL)</h4>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">-- 1. Check current APEX version (Multiple versions might be installed)</span>
+<span class="k">SELECT</span> <span class="n">comp_id</span><span class="p">,</span> <span class="n">comp_name</span><span class="p">,</span> <span class="k">version</span><span class="p">,</span> <span class="n">status</span> 
+<span class="k">FROM</span> <span class="n">dba_registry</span> 
+<span class="k">WHERE</span> <span class="n">comp_id</span> <span class="o">=</span> <span class="s1">'APEX'</span><span class="p">;</span>
+
+<span class="c1">-- Note: The principal_name (e.g., APEX_220200) must match the version returned above.</span>
+<span class="k">SET</span> <span class="n">SERVEROUT</span> <span class="k">ON</span><span class="p">;</span>
+
+<span class="c1">-- 2. Clean up existing ACEs to avoid conflicts</span>
+<span class="k">BEGIN</span>
+  <span class="n">DBMS_NETWORK_ACL_ADMIN</span><span class="p">.</span><span class="n">REMOVE_HOST_ACE</span><span class="p">(</span>
+    <span class="k">host</span>       <span class="o">=&gt;</span> <span class="s1">'accounts.google.com'</span><span class="p">,</span>
+    <span class="n">ace</span>        <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">ace_type</span><span class="p">(</span><span class="n">privilege_list</span> <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">name_list</span><span class="p">(</span><span class="s1">'resolve'</span><span class="p">),</span>
+                             <span class="n">principal_name</span> <span class="o">=&gt;</span> <span class="s1">'APEX_220200'</span><span class="p">,</span>
+                             <span class="n">principal_type</span> <span class="o">=&gt;</span> <span class="n">xs_acl</span><span class="p">.</span><span class="n">ptype_db</span><span class="p">));</span>
+  
+  <span class="n">DBMS_NETWORK_ACL_ADMIN</span><span class="p">.</span><span class="n">REMOVE_HOST_ACE</span><span class="p">(</span>
+    <span class="k">host</span>       <span class="o">=&gt;</span> <span class="s1">'accounts.google.com'</span><span class="p">,</span>
+    <span class="n">lower_port</span> <span class="o">=&gt;</span> <span class="mi">443</span><span class="p">,</span>
+    <span class="n">upper_port</span> <span class="o">=&gt;</span> <span class="mi">443</span><span class="p">,</span>
+    <span class="n">ace</span>        <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">ace_type</span><span class="p">(</span><span class="n">privilege_list</span> <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">name_list</span><span class="p">(</span><span class="s1">'connect'</span><span class="p">),</span>
+                             <span class="n">principal_name</span> <span class="o">=&gt;</span> <span class="s1">'APEX_220200'</span><span class="p">,</span>
+                             <span class="n">principal_type</span> <span class="o">=&gt;</span> <span class="n">xs_acl</span><span class="p">.</span><span class="n">ptype_db</span><span class="p">));</span>                             
+<span class="k">END</span><span class="p">;</span>
+<span class="o">/</span>
+<span class="k">COMMIT</span><span class="p">;</span>
+
+<span class="c1">-- 3. Configure Network ACLs</span>
+<span class="k">BEGIN</span>
+    <span class="n">DBMS_NETWORK_ACL_ADMIN</span><span class="p">.</span><span class="n">APPEND_HOST_ACE</span><span class="p">(</span>
+        <span class="k">host</span>       <span class="o">=&gt;</span> <span class="s1">'*.gstatic.com'</span><span class="p">,</span>
+        <span class="n">ace</span>        <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">ace_type</span><span class="p">(</span><span class="n">privilege_list</span> <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">name_list</span><span class="p">(</span><span class="s1">'resolve'</span><span class="p">),</span>
+                                 <span class="n">principal_name</span> <span class="o">=&gt;</span> <span class="s1">'APEX_220200'</span><span class="p">,</span>
+                                 <span class="n">principal_type</span> <span class="o">=&gt;</span> <span class="n">xs_acl</span><span class="p">.</span><span class="n">ptype_db</span><span class="p">));</span>
+    <span class="n">DBMS_NETWORK_ACL_ADMIN</span><span class="p">.</span><span class="n">APPEND_HOST_ACE</span><span class="p">(</span>
+        <span class="k">host</span>       <span class="o">=&gt;</span> <span class="s1">'*.google.com'</span><span class="p">,</span>
+        <span class="n">ace</span>        <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">ace_type</span><span class="p">(</span><span class="n">privilege_list</span> <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">name_list</span><span class="p">(</span><span class="s1">'resolve'</span><span class="p">),</span>
+                                 <span class="n">principal_name</span> <span class="o">=&gt;</span> <span class="s1">'APEX_220200'</span><span class="p">,</span>
+                                 <span class="n">principal_type</span> <span class="o">=&gt;</span> <span class="n">xs_acl</span><span class="p">.</span><span class="n">ptype_db</span><span class="p">));</span>
+    <span class="n">DBMS_NETWORK_ACL_ADMIN</span><span class="p">.</span><span class="n">APPEND_HOST_ACE</span><span class="p">(</span>
+        <span class="k">host</span>       <span class="o">=&gt;</span> <span class="s1">'*.googleapis.com'</span><span class="p">,</span>
+        <span class="n">ace</span>        <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">ace_type</span><span class="p">(</span><span class="n">privilege_list</span> <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">name_list</span><span class="p">(</span><span class="s1">'resolve'</span><span class="p">),</span>
+                                 <span class="n">principal_name</span> <span class="o">=&gt;</span> <span class="s1">'APEX_220200'</span><span class="p">,</span>
+                                 <span class="n">principal_type</span> <span class="o">=&gt;</span> <span class="n">xs_acl</span><span class="p">.</span><span class="n">ptype_db</span><span class="p">));</span>                             
+    <span class="n">DBMS_NETWORK_ACL_ADMIN</span><span class="p">.</span><span class="n">APPEND_HOST_ACE</span><span class="p">(</span>
+        <span class="k">host</span>       <span class="o">=&gt;</span> <span class="s1">'*.google.com'</span><span class="p">,</span>
+        <span class="n">lower_port</span> <span class="o">=&gt;</span> <span class="mi">443</span><span class="p">,</span>
+        <span class="n">upper_port</span> <span class="o">=&gt;</span> <span class="mi">443</span><span class="p">,</span>
+        <span class="n">ace</span>        <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">ace_type</span><span class="p">(</span><span class="n">privilege_list</span> <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">name_list</span><span class="p">(</span><span class="s1">'connect'</span><span class="p">),</span>
+                                <span class="n">principal_name</span> <span class="o">=&gt;</span> <span class="s1">'APEX_220200'</span><span class="p">,</span>
+                                <span class="n">principal_type</span> <span class="o">=&gt;</span> <span class="n">xs_acl</span><span class="p">.</span><span class="n">ptype_db</span><span class="p">));</span>
+    <span class="n">DBMS_NETWORK_ACL_ADMIN</span><span class="p">.</span><span class="n">APPEND_HOST_ACE</span><span class="p">(</span>
+        <span class="k">host</span>       <span class="o">=&gt;</span> <span class="s1">'*.googleapis.com'</span><span class="p">,</span>
+        <span class="n">lower_port</span> <span class="o">=&gt;</span> <span class="mi">443</span><span class="p">,</span>
+        <span class="n">upper_port</span> <span class="o">=&gt;</span> <span class="mi">443</span><span class="p">,</span>
+        <span class="n">ace</span>        <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">ace_type</span><span class="p">(</span><span class="n">privilege_list</span> <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">name_list</span><span class="p">(</span><span class="s1">'connect'</span><span class="p">),</span>
+                                 <span class="n">principal_name</span> <span class="o">=&gt;</span> <span class="s1">'APEX_220200'</span><span class="p">,</span>
+                                 <span class="n">principal_type</span> <span class="o">=&gt;</span> <span class="n">xs_acl</span><span class="p">.</span><span class="n">ptype_db</span><span class="p">));</span>
+    <span class="n">DBMS_NETWORK_ACL_ADMIN</span><span class="p">.</span><span class="n">APPEND_HOST_ACE</span><span class="p">(</span>
+        <span class="k">host</span>       <span class="o">=&gt;</span> <span class="s1">'*.gstatic.com'</span><span class="p">,</span>
+        <span class="n">lower_port</span> <span class="o">=&gt;</span> <span class="mi">443</span><span class="p">,</span>
+        <span class="n">upper_port</span> <span class="o">=&gt;</span> <span class="mi">443</span><span class="p">,</span>
+        <span class="n">ace</span>        <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">ace_type</span><span class="p">(</span><span class="n">privilege_list</span> <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">name_list</span><span class="p">(</span><span class="s1">'connect'</span><span class="p">),</span>
+                                 <span class="n">principal_name</span> <span class="o">=&gt;</span> <span class="s1">'APEX_220200'</span><span class="p">,</span>
+                                 <span class="n">principal_type</span> <span class="o">=&gt;</span> <span class="n">xs_acl</span><span class="p">.</span><span class="n">ptype_db</span><span class="p">));</span>
+  
+  <span class="c1">-- 4. Grant Wallet permissions (Adjust path to absolute path)</span>
+  <span class="n">DBMS_NETWORK_ACL_ADMIN</span><span class="p">.</span><span class="n">APPEND_WALLET_ACE</span><span class="p">(</span>
+    <span class="n">wallet_path</span> <span class="o">=&gt;</span> <span class="s1">'file:/u01/app/oracle/product/version/dbhome_1/wallet/https_wallet'</span><span class="p">,</span>
+    <span class="n">ace</span>         <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">ace_type</span><span class="p">(</span><span class="n">privilege_list</span> <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">name_list</span><span class="p">(</span><span class="s1">'use_client_certificates'</span><span class="p">),</span>
+                             <span class="n">principal_name</span> <span class="o">=&gt;</span> <span class="s1">'APEX_220200'</span><span class="p">,</span>
+                             <span class="n">principal_type</span> <span class="o">=&gt;</span> <span class="n">xs_acl</span><span class="p">.</span><span class="n">ptype_db</span><span class="p">));</span>
+<span class="k">END</span><span class="p">;</span>
+<span class="o">/</span>
+<span class="k">COMMIT</span><span class="p">;</span>
+
+<span class="c1">-- 5. Session-level Test</span>
+<span class="k">DECLARE</span>
+    <span class="n">l_response</span> <span class="k">CLOB</span><span class="p">;</span>
+<span class="k">BEGIN</span>
+    <span class="n">apex_web_service</span><span class="p">.</span><span class="n">g_request_headers</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">name</span> <span class="p">:</span><span class="o">=</span> <span class="s1">'Content-Type'</span><span class="p">;</span>
+    <span class="n">apex_web_service</span><span class="p">.</span><span class="n">g_request_headers</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">value</span> <span class="p">:</span><span class="o">=</span> <span class="s1">'application/json'</span><span class="p">;</span>
+  
+    <span class="n">l_response</span> <span class="p">:</span><span class="o">=</span> <span class="n">apex_web_service</span><span class="p">.</span><span class="n">make_rest_request</span><span class="p">(</span>
+        <span class="n">p_url</span>         <span class="o">=&gt;</span> <span class="s1">'https://accounts.google.com/.well-known/openid-configuration'</span><span class="p">,</span>
+        <span class="n">p_http_method</span> <span class="o">=&gt;</span> <span class="s1">'GET'</span><span class="p">,</span>
+        <span class="n">p_wallet_path</span> <span class="o">=&gt;</span> <span class="s1">'file:/u01/app/oracle/product/version/dbhome_1/wallet/https_wallet'</span><span class="p">,</span>
+        <span class="n">p_wallet_pwd</span>  <span class="o">=&gt;</span> <span class="s1">'MyPassword'</span>
+    <span class="p">);</span>
+  
+    <span class="n">dbms_output</span><span class="p">.</span><span class="n">put_line</span><span class="p">(</span><span class="n">dbms_lob</span><span class="p">.</span><span class="n">substr</span><span class="p">(</span><span class="n">l_response</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1</span><span class="p">));</span>
+<span class="k">END</span><span class="p">;</span>
+<span class="o">/</span>
+
+<span class="c1">-- 6. Define Global Instance Wallet Parameters</span>
+<span class="k">BEGIN</span>
+    <span class="c1">-- APEX_INSTANCE_ADMIN.SET_PARAMETER('HTTP_PROXY', 'ProxyHost:Port'); -- If proxy is required</span>
+    <span class="n">APEX_INSTANCE_ADMIN</span><span class="p">.</span><span class="n">SET_PARAMETER</span><span class="p">(</span><span class="s1">'WALLET_PATH'</span><span class="p">,</span> <span class="s1">'file:/u01/app/oracle/product/version/dbhome_1/wallet/https_wallet'</span><span class="p">);</span>
+    <span class="n">APEX_INSTANCE_ADMIN</span><span class="p">.</span><span class="n">SET_PARAMETER</span><span class="p">(</span><span class="s1">'WALLET_PWD'</span><span class="p">,</span> <span class="s1">'MyPassword'</span><span class="p">);</span>
+    <span class="k">COMMIT</span><span class="p">;</span>
+<span class="k">END</span><span class="p">;</span>
+<span class="o">/</span>
+
+<span class="c1">-- 7. Final Test using Global Instance Settings</span>
+<span class="k">DECLARE</span>
+    <span class="n">l_response</span> <span class="k">CLOB</span><span class="p">;</span>
+<span class="k">BEGIN</span>
+    <span class="n">apex_web_service</span><span class="p">.</span><span class="n">g_request_headers</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">name</span> <span class="p">:</span><span class="o">=</span> <span class="s1">'Content-Type'</span><span class="p">;</span>
+    <span class="n">apex_web_service</span><span class="p">.</span><span class="n">g_request_headers</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">value</span> <span class="p">:</span><span class="o">=</span> <span class="s1">'application/json'</span><span class="p">;</span>
+  
+    <span class="n">l_response</span> <span class="p">:</span><span class="o">=</span> <span class="n">apex_web_service</span><span class="p">.</span><span class="n">make_rest_request</span><span class="p">(</span>
+        <span class="n">p_url</span>         <span class="o">=&gt;</span> <span class="s1">'https://accounts.google.com/.well-known/openid-configuration'</span><span class="p">,</span>
+        <span class="n">p_http_method</span> <span class="o">=&gt;</span> <span class="s1">'GET'</span>
+    <span class="p">);</span>
+  
+    <span class="n">dbms_output</span><span class="p">.</span><span class="n">put_line</span><span class="p">(</span><span class="n">dbms_lob</span><span class="p">.</span><span class="n">substr</span><span class="p">(</span><span class="n">l_response</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1</span><span class="p">));</span>
+<span class="k">END</span><span class="p">;</span>
+<span class="o">/</span>
+</code></pre></div></div>]]></content><author><name>Rodrigo Correia</name></author><category term="oracle" /><category term="wallet" /><category term="https" /><category term="apex" /><summary type="html"><![CDATA[Oracle APEX HTTPS Configuration Guide (Google Services)]]></summary></entry><entry><title type="html">Oracle MGMTDB: The Hidden Brain of Your Grid Infrastructure</title><link href="http://localhost:4000/oracle/performance/sql/2026/03/09/guia_management_database-mgmtdb.html" rel="alternate" type="text/html" title="Oracle MGMTDB: The Hidden Brain of Your Grid Infrastructure" /><published>2026-03-09T13:00:00+00:00</published><updated>2026-03-09T13:00:00+00:00</updated><id>http://localhost:4000/oracle/performance/sql/2026/03/09/guia_management_database-mgmtdb</id><content type="html" xml:base="http://localhost:4000/oracle/performance/sql/2026/03/09/guia_management_database-mgmtdb.html"><![CDATA[<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># Oracle MGMTDB: The Hidden Brain of Your Grid Infrastructure
+
+The **MGMTDB** (Management Database) is a single-instance Oracle database embedded within your Grid Infrastructure, acting as the central repository for diagnostics, performance metrics, and proactive health monitoring. While often overlooked, it’s the backbone of observability for Oracle clusters—transforming raw telemetry into actionable insights.
+
+---
+
+## **What Is MGMTDB?**
+MGMTDB is a **Single Instance** Oracle database (SID: `-MGMTDB`) managed by Oracle Clusterware. It stores metadata and diagnostic data collected by Grid Infrastructure services, enabling real-time and historical analysis of cluster health.
+
+### **Key Components Stored in MGMTDB**
+| Component | Purpose |
+|-----------|---------|
+| **Cluster Health Monitor (CHM/OS)** | Real-time metrics (CPU, memory, I/O, network) across all nodes. |
+| **Cluster Health Advisor (CHA)** | AI-driven anomaly detection and root-cause analysis. |
+| **Quality of Service (QoS) Management** | Workload performance data and resource allocation. |
+| **Fleet Patching and Provisioning (FPP)** | Metadata for automated patching and provisioning. |
+
+&gt; **Historical Note**: In Oracle 12.1/12.2, the **Grid Infrastructure Management Repository (GIMR)** was mandatory. Since **Oracle 19c**, it’s optional for standalone clusters but remains critical for **Domain Services Clusters**.
+
+---
+
+## **Architecture and Deployment**
+Unlike production databases, MGMTDB has unique architectural traits:
+
+| Feature | Technical Detail |
+|---------|------------------|
+| **Instance Type** | Single Instance (managed by Oracle Clusterware). |
+| **High Availability** | Runs on one node at a time; fails over automatically if the node crashes. |
+| **Multitenant Structure** | A **CDB** (`-MGMTDB`) with one **PDB** per cluster (e.g., `CHM_MYCLUSTER`). |
+| **Storage** | Typically deployed in a dedicated ASM Disk Group (`+MGMT`), but can share `+GRID` or `+DATA`. |
+
+---
+
+## **Essential Management Commands**
+Manage MGMTDB using `srvctl` (as the `grid` user) and `oclumon` for diagnostics.
+
+### **Basic Administration with `srvctl`**
+```bash
+# Check status and configuration
+srvctl status mgmtdb
+srvctl config mgmtdb
+
+# Relocate MGMTDB to another node (e.g., for maintenance)
+srvctl relocate mgmtdb -n &lt;target_node&gt;
+
+# Start/Stop
+srvctl stop mgmtdb
+srvctl start mgmtdb
+</code></pre></div></div>
+
+<h3 id="data-retention-with-oclumon"><strong>Data Retention with <code class="highlighter-rouge">oclumon</code></strong></h3>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Check current retention (default: 24 hours)</span>
+oclumon manage <span class="nt">-repos</span> checkretentiontime
+
+<span class="c"># Increase retention (e.g., to 48 hours)</span>
+oclumon manage <span class="nt">-repos</span> changereposize 172800
+</code></pre></div></div>
+
+<h3 id="connecting-to-mgmtdb-sqlplus"><strong>Connecting to MGMTDB (SQL*Plus)</strong></h3>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">export </span><span class="nv">ORACLE_SID</span><span class="o">=</span><span class="nt">-MGMTDB</span>
+<span class="nb">export </span><span class="nv">ORACLE_HOME</span><span class="o">=</span><span class="nv">$GRID_HOME</span>
+sqlplus / as sysdba
+</code></pre></div></div>
+<blockquote>
+  <p><strong>Warning</strong>: Avoid manual parameter changes unless directed by Oracle Support (MOS).</p>
+</blockquote>
+
+<hr />
+
+<h2 id="extracting-metrics-and-diagnostics"><strong>Extracting Metrics and Diagnostics</strong></h2>
+<p>MGMTDB enables deep observability into cluster health. Here’s how to leverage its data:</p>
+
+<h3 id="1-extracting-system-metrics-with-oclumon"><strong>1. Extracting System Metrics with <code class="highlighter-rouge">oclumon</code></strong></h3>
+<p>The <code class="highlighter-rouge">dumpnodeview</code> command is your Swiss Army knife for CHM data.</p>
+
+<h4 id="common-use-cases"><strong>Common Use Cases</strong></h4>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Export CSV for analysis (e.g., Excel/Python)</span>
+oclumon dumpnodeview <span class="nt">-allnodes</span> <span class="nt">-v</span> <span class="nt">-format</span> csv <span class="se">\</span>
+  <span class="nt">-s</span> <span class="s2">"2026-03-07 08:00:00"</span> <span class="nt">-e</span> <span class="s2">"2026-03-07 09:00:00"</span> <span class="o">&gt;</span> metrics.csv
+
+<span class="c"># Top resource-consuming processes (last 15 minutes)</span>
+oclumon dumpnodeview <span class="nt">-allnodes</span> <span class="nt">-last</span> <span class="s2">"00:15:00"</span> <span class="nt">-topconsumer</span>
+
+<span class="c"># Real-time I/O monitoring (refresh every 5s)</span>
+oclumon dumpnodeview <span class="nt">-n</span> &lt;node_name&gt; <span class="nt">-device</span> <span class="nt">-i</span> 5
+</code></pre></div></div>
+
+<h4 id="key-metrics-to-monitor"><strong>Key Metrics to Monitor</strong></h4>
+<p>| View | Metrics | What to Look For |
+|——|———|——————|
+| <strong>SYSTEM</strong> | <code class="highlighter-rouge">cpuusage</code>, <code class="highlighter-rouge">physmemfree</code>, <code class="highlighter-rouge">iowait</code> | CPU bottlenecks or memory pressure. |
+| <strong>DEVICE</strong> | <code class="highlighter-rouge">utilization</code>, <code class="highlighter-rouge">queuelen</code>, <code class="highlighter-rouge">waittime</code> | Slow disks or saturated I/O queues. |
+| <strong>NIC</strong> | <code class="highlighter-rouge">netrx</code>, <code class="highlighter-rouge">nettx</code>, <code class="highlighter-rouge">errors</code> | Interconnect network saturation. |
+| <strong>TOPCONSUMER</strong> | <code class="highlighter-rouge">process_name</code>, <code class="highlighter-rouge">utilization</code> | Identify rogue processes (Oracle or OS). |</p>
+
+<hr />
+
+<h3 id="2-proactive-diagnostics-with-cluster-health-advisor-cha"><strong>2. Proactive Diagnostics with Cluster Health Advisor (CHA)</strong></h3>
+<p>CHA uses machine learning to detect anomalies. Interact with it via <code class="highlighter-rouge">chactl</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Check current cluster health</span>
+chactl query diagnosis <span class="nt">-cluster</span>
+
+<span class="c"># Investigate past incidents</span>
+chactl query diagnosis <span class="nt">-cluster</span> <span class="se">\</span>
+  <span class="nt">-start</span> <span class="s2">"2026-03-07 08:00:00"</span> <span class="nt">-end</span> <span class="s2">"2026-03-07 09:00:00"</span>
+</code></pre></div></div>
+<blockquote>
+  <p><strong>Output</strong>: CHA provides not just the issue (e.g., “High CPU Usage”) but also the likely root cause and suggested fixes.</p>
+</blockquote>
+
+<h4 id="customizing-cha-models"><strong>Customizing CHA Models</strong></h4>
+<p>Reduce false positives by calibrating CHA to your workload:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Create a custom model based on "normal" workload</span>
+chactl calibrate model <span class="nt">-name</span> my_custom_model <span class="nt">-db</span> prod_db <span class="se">\</span>
+  <span class="nt">-start</span> <span class="s2">"2026-03-01 00:00:00"</span> <span class="nt">-end</span> <span class="s2">"2026-03-02 00:00:00"</span>
+
+<span class="c"># Monitor calibration progress</span>
+chactl query model <span class="nt">-name</span> my_custom_model
+
+<span class="c"># Activate the model</span>
+chactl monitor db <span class="nt">-db</span> prod_db <span class="nt">-model</span> my_custom_model
+</code></pre></div></div>
+
+<hr />
+
+<h3 id="3-direct-sql-queries-for-advanced-users"><strong>3. Direct SQL Queries (For Advanced Users)</strong></h3>
+<p>While Oracle recommends CLI tools, you can query MGMTDB directly via SQL*Plus.</p>
+
+<h4 id="steps-to-query-chm-data"><strong>Steps to Query CHM Data</strong></h4>
+<ol>
+  <li><strong>Identify the PDB for your cluster</strong>:
+    <div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">sqlplus</span> <span class="o">/</span> <span class="k">as</span> <span class="n">sysdba</span>
+<span class="k">show</span> <span class="n">pdbs</span><span class="p">;</span>
+<span class="k">alter</span> <span class="k">session</span> <span class="k">set</span> <span class="n">container</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">CHM_PDB_NAME</span><span class="o">&gt;</span><span class="p">;</span>
+</code></pre></div>    </div>
+  </li>
+  <li><strong>Query CHM tables</strong> (Oracle 19c+):
+    <div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">-- Example: CPU usage history (last hour)</span>
+<span class="k">SELECT</span> <span class="nb">timestamp</span><span class="p">,</span> <span class="n">node_name</span><span class="p">,</span> <span class="n">cpu_usage</span>
+<span class="k">FROM</span> <span class="n">CHM</span><span class="p">.</span><span class="n">CHM_OS_SYSTEM_METRICS</span>
+<span class="k">WHERE</span> <span class="nb">timestamp</span> <span class="o">&gt;</span> <span class="n">SYSDATE</span> <span class="o">-</span> <span class="mi">1</span><span class="o">/</span><span class="mi">24</span>
+<span class="k">ORDER</span> <span class="k">BY</span> <span class="nb">timestamp</span> <span class="k">DESC</span><span class="p">;</span>
+</code></pre></div>    </div>
+  </li>
+</ol>
+
+<hr />
+
+<h3 id="4-cluster-activity-log-calog"><strong>4. Cluster Activity Log (CALOG)</strong></h3>
+<p>CALOG is the “event log” for Grid Infrastructure, stored in MGMTDB. Use it to investigate failures:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Query events after a specific time</span>
+crsctl query calog <span class="nt">-aftertime</span> <span class="s2">"2026-03-07 08:00:00"</span>
+
+<span class="c"># Filter by resource (e.g., a database)</span>
+crsctl query calog <span class="nt">-entity</span> ora.prod_db.db
+
+<span class="c"># Check retention (default: 72 hours)</span>
+crsctl get calog retentiontime
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="troubleshooting-mgmtdb"><strong>Troubleshooting MGMTDB</strong></h2>
+<h3 id="1-connectivity-and-daemon-issues"><strong>1. Connectivity and Daemon Issues</strong></h3>
+<p>MGMTDB relies on two daemons:</p>
+<ul>
+  <li><code class="highlighter-rouge">osysmond</code> (runs on every node, collects metrics).</li>
+  <li><code class="highlighter-rouge">ologgerd</code> (runs on the master node, writes to MGMTDB).</li>
+</ul>
+
+<h4 id="diagnostic-commands"><strong>Diagnostic Commands</strong></h4>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Check daemon status</span>
+crsctl <span class="nb">stat </span>res ora.crf <span class="nt">-init</span> <span class="nt">-t</span>
+
+<span class="c"># Identify the master node (where ologgerd runs)</span>
+oclumon manage <span class="nt">-get</span> master
+
+<span class="c"># Enable debug logging (level 3)</span>
+oclumon debug log osysmond allcomp:3  <span class="c"># Local node</span>
+oclumon debug log ologgerd allcomp:3  <span class="c"># Master node</span>
+</code></pre></div></div>
+<blockquote>
+  <p><strong>Log Location</strong>: <code class="highlighter-rouge">$GRID_HOME/log/&lt;hostname&gt;/crf/</code></p>
+</blockquote>
+
+<hr />
+
+<h3 id="2-disk-space-management"><strong>2. Disk Space Management</strong></h3>
+<p>MGMTDB can fill up its ASM Disk Group. Mitigation steps:</p>
+
+<ol>
+  <li><strong>Check space usage</strong>:
+    <div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">-- Connect to -MGMTDB as sysdba</span>
+<span class="k">SELECT</span> <span class="n">file_name</span><span class="p">,</span> <span class="n">bytes</span><span class="o">/</span><span class="mi">1024</span><span class="o">/</span><span class="mi">1024</span> <span class="n">MB</span> <span class="k">FROM</span> <span class="n">dba_data_files</span><span class="p">;</span>
+</code></pre></div>    </div>
+  </li>
+  <li><strong>Add space to the Disk Group</strong> (e.g., <code class="highlighter-rouge">+MGMT</code>).</li>
+  <li><strong>Reduce retention</strong> (if space is constrained):
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>oclumon manage <span class="nt">-repos</span> changereposize 86400  <span class="c"># 24 hours</span>
+</code></pre></div>    </div>
+  </li>
+</ol>
+
+<hr />
+
+<h3 id="3-recreating-mgmtdb-last-resort"><strong>3. Recreating MGMTDB (Last Resort)</strong></h3>
+<p>If the repository is corrupted, use Oracle’s tools to recreate it:</p>
+<ul>
+  <li><strong>Oracle 19c+</strong>: <code class="highlighter-rouge">mgmtca</code> (Management Database Configuration Assistant).</li>
+  <li><strong>Oracle 12c</strong>: Follow MOS Note <strong>1589394.1</strong> for scripts.</li>
+</ul>
+
+<hr />
+
+<h2 id="best-practices"><strong>Best Practices</strong></h2>
+<ol>
+  <li><strong>Storage</strong>: Use a dedicated ASM Disk Group (<code class="highlighter-rouge">+MGMT</code>) for MGMTDB.</li>
+  <li><strong>Retention</strong>: Adjust <code class="highlighter-rouge">oclumon</code> retention based on your diagnostic needs (default 24h is often too short).</li>
+  <li><strong>Monitoring</strong>: Integrate MGMTDB metrics into your observability stack (e.g., Grafana, Prometheus).</li>
+  <li><strong>Backups</strong>: While MGMTDB is not critical for cluster operation, back up its datafiles if you rely on historical diagnostics.</li>
+  <li><strong>Security</strong>: Restrict access to MGMTDB; it contains sensitive cluster metadata.</li>
+</ol>
+
+<hr />
+
+<h2 id="quick-reference-cheat-sheet"><strong>Quick Reference Cheat Sheet</strong></h2>
+<p>| Task | Command |
+|——|———|
+| <strong>Relocate MGMTDB</strong> | <code class="highlighter-rouge">srvctl relocate mgmtdb -n &lt;node&gt;</code> |
+| <strong>Check Master Node</strong> | <code class="highlighter-rouge">oclumon manage -get master</code> |
+| <strong>Adjust Retention</strong> | <code class="highlighter-rouge">oclumon manage -repos changereposize &lt;seconds&gt;</code> |
+| <strong>Query CHA Diagnostics</strong> | <code class="highlighter-rouge">chactl query diagnosis -cluster</code> |
+| <strong>Export CHM Metrics</strong> | <code class="highlighter-rouge">oclumon dumpnodeview -allnodes -format csv</code> |
+| <strong>Query CALOG</strong> | <code class="highlighter-rouge">crsctl query calog -aftertime "YYYY-MM-DD HH:MI:SS"</code> |
+| <strong>Check Daemon Status</strong> | <code class="highlighter-rouge">crsctl stat res ora.crf -init -t</code> |</p>
+
+<hr />
+
+<h2 id="conclusion"><strong>Conclusion</strong></h2>
+<p>MGMTDB is the unsung hero of Oracle Grid Infrastructure—turning raw telemetry into actionable insights. By mastering its tools (<code class="highlighter-rouge">oclumon</code>, <code class="highlighter-rouge">chactl</code>, <code class="highlighter-rouge">crsctl</code>), you can:</p>
+<ul>
+  <li><strong>Proactively detect</strong> anomalies before they impact production.</li>
+  <li><strong>Diagnose failures</strong> with precision using historical data.</li>
+  <li><strong>Optimize performance</strong> by identifying resource bottlenecks.</li>
+</ul>]]></content><author><name>Rodrigo Correia</name></author><category term="oracle" /><category term="performance" /><category term="sql" /><summary type="html"><![CDATA[``` Oracle MGMTDB: The Hidden Brain of Your Grid Infrastructure]]></summary></entry><entry><title type="html">Tuning adivisor procedure</title><link href="http://localhost:4000/oracle/performance/sql/2022/03/26/tuning-adivisor.html" rel="alternate" type="text/html" title="Tuning adivisor procedure" /><published>2022-03-26T18:00:00+00:00</published><updated>2022-03-26T18:00:00+00:00</updated><id>http://localhost:4000/oracle/performance/sql/2022/03/26/tuning-adivisor</id><content type="html" xml:base="http://localhost:4000/oracle/performance/sql/2022/03/26/tuning-adivisor.html"><![CDATA[<h3 id="procedure-to-run-the-tuning-advisor-on-a-given-sql_id">Procedure to run the Tuning Advisor on a given sql_id</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SET SERVEROUTPUT ON
+DECLARE
+  v_sql_id VARCHAR2(100) := 'xxxxxxxxxxxxx';
+  l_sql_tune_task_id  VARCHAR2(100);
+  v_tuning_results  clob;
+BEGIN
+  BEGIN
+    l_sql_tune_task_id := DBMS_SQLTUNE.create_tuning_task (
+                            sql_id      =&gt; v_sql_id,
+                            scope       =&gt; DBMS_SQLTUNE.scope_comprehensive,
+                            time_limit  =&gt; 500,
+                            task_name   =&gt; v_sql_id || '_tuning',
+                            description =&gt; 'Tuning task1 for statement ' || v_sql_id);
+  END;
+  BEGIN
+    DBMS_SQLTUNE.execute_tuning_task(task_name =&gt; v_sql_id || '_tuning');
+    select dbms_sqltune.report_tuning_task(v_sql_id || '_tuning') into v_tuning_results from dual;
+    DBMS_OUTPUT.put_line(v_tuning_results);
+    dbms_sqltune.drop_tuning_task(v_sql_id || '_tuning');
+  END;
+END;
+/
+</code></pre></div></div>
+
+<h3 id="get-execution-plan-of-a-given-sql_id">Get execution plan of a given sql_id</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>select plan_table_output from table(dbms_xplan.display_cursor('xxxxxxxxxxxxx'));
+</code></pre></div></div>
+
+<h3 id="get-execution-plan-of-a-given-sql_id-with-variable-values">Get execution plan of a given sql_id with variable values</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>select * from table(dbms_xplan.display_cursor(sql_id=&gt;'xxxxxxxxxxxxx', format=&gt;'TYPICAL +peeked_binds'));
+</code></pre></div></div>]]></content><author><name>Rodrigo Correia</name></author><category term="oracle" /><category term="performance" /><category term="sql" /><summary type="html"><![CDATA[Procedure to run the Tuning Advisor on a given sql_id SET SERVEROUTPUT ON DECLARE v_sql_id VARCHAR2(100) := 'xxxxxxxxxxxxx'; l_sql_tune_task_id VARCHAR2(100); v_tuning_results clob; BEGIN BEGIN l_sql_tune_task_id := DBMS_SQLTUNE.create_tuning_task ( sql_id =&gt; v_sql_id, scope =&gt; DBMS_SQLTUNE.scope_comprehensive, time_limit =&gt; 500, task_name =&gt; v_sql_id || '_tuning', description =&gt; 'Tuning task1 for statement ' || v_sql_id); END; BEGIN DBMS_SQLTUNE.execute_tuning_task(task_name =&gt; v_sql_id || '_tuning'); select dbms_sqltune.report_tuning_task(v_sql_id || '_tuning') into v_tuning_results from dual; DBMS_OUTPUT.put_line(v_tuning_results); dbms_sqltune.drop_tuning_task(v_sql_id || '_tuning'); END; END; /]]></summary></entry><entry><title type="html">Check ASM disk usage</title><link href="http://localhost:4000/oracle/sql/asm/2022/02/16/asm-disk-usage.html" rel="alternate" type="text/html" title="Check ASM disk usage" /><published>2022-02-16T09:00:00+00:00</published><updated>2022-02-16T09:00:00+00:00</updated><id>http://localhost:4000/oracle/sql/asm/2022/02/16/asm-disk-usage</id><content type="html" xml:base="http://localhost:4000/oracle/sql/asm/2022/02/16/asm-disk-usage.html"><![CDATA[<h3 id="query-to-check-asm-disk-usage">Query to check ASM disk usage</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SELECT
+    name,
+    DECODE(type, 'NORMAL', 2, 'HIGH', 3, 'EXTERN', 1) redundancy,
+    round(( total_mb / DECODE(type, 'NORMAL', 2, 'HIGH', 3, 'EXTERN', 1)/1024/1024 ),2) total_tb,
+    round(( free_mb / DECODE(type, 'NORMAL', 2, 'HIGH', 3, 'EXTERN', 1) )/1024/1024,2) free_tb,
+    round(((free_mb / DECODE(type, 'NORMAL', 2, 'HIGH', 3, 'EXTERN', 1)) /(total_mb / DECODE(TYPE, 'NORMAL', 2, 'HIGH', 3, 'EXTERN', 1))) * 100, 2
+    ) "%Free"
+FROM
+    v$asm_diskgroup;
+</code></pre></div></div>]]></content><author><name>Rodrigo Correia</name></author><category term="oracle" /><category term="sql" /><category term="asm" /><summary type="html"><![CDATA[Query to check ASM disk usage SELECT name, DECODE(type, 'NORMAL', 2, 'HIGH', 3, 'EXTERN', 1) redundancy, round(( total_mb / DECODE(type, 'NORMAL', 2, 'HIGH', 3, 'EXTERN', 1)/1024/1024 ),2) total_tb, round(( free_mb / DECODE(type, 'NORMAL', 2, 'HIGH', 3, 'EXTERN', 1) )/1024/1024,2) free_tb, round(((free_mb / DECODE(type, 'NORMAL', 2, 'HIGH', 3, 'EXTERN', 1)) /(total_mb / DECODE(TYPE, 'NORMAL', 2, 'HIGH', 3, 'EXTERN', 1))) * 100, 2 ) "%Free" FROM v$asm_diskgroup;]]></summary></entry><entry><title type="html">Tablespace space usage</title><link href="http://localhost:4000/oracle/maintenance/sql/2022/01/09/tablespace-space-usage.html" rel="alternate" type="text/html" title="Tablespace space usage" /><published>2022-01-09T13:00:00+00:00</published><updated>2022-01-09T13:00:00+00:00</updated><id>http://localhost:4000/oracle/maintenance/sql/2022/01/09/tablespace-space-usage</id><content type="html" xml:base="http://localhost:4000/oracle/maintenance/sql/2022/01/09/tablespace-space-usage.html"><![CDATA[<h3 id="query-to-check-tablespace-space-usage">Query to check tablespace space usage</h3>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>set linesize 132 tab off trimspool on
+set pagesize 105
+set pause off
+set echo off
+set feedb on
+
+column "TOTAL ALLOC (MB)" format 9,999,990.00
+column "TOTAL PHYS ALLOC (MB)" format 9,999,990.00
+column "USED (MB)" format 9,999,990.00
+column "FREE (MB)" format 9,999,990.00
+column "% USED" format 990.00
+
+select a.tablespace_name,
+round(a.bytes_alloc/(1024*1024*1024),2) "TOTAL ALLOC (GB)",
+round(a.physical_bytes/(1024*1024*1024),2) "TOTAL PHYS ALLOC (GB)",
+round(nvl(b.tot_used,0)/(1024*1024*1024),2) "USED (GB)",
+round((nvl(b.tot_used,0)/a.bytes_alloc)*100,2) "% USED",
+round(a.bytes_alloc/(1024*1024*1024)-nvl(b.tot_used,0)/(1024*1024*1024),2) "FREE (GB)"
+from ( select tablespace_name,
+sum(bytes) physical_bytes,
+sum(decode(autoextensible,'NO',bytes,'YES',maxbytes)) bytes_alloc
+from cdb_data_files
+group by tablespace_name ) a,
+( select tablespace_name, sum(bytes) tot_used
+from cdb_segments
+group by tablespace_name ) b
+where a.tablespace_name = b.tablespace_name (+)
+and a.tablespace_name not in (select distinct tablespace_name from cdb_temp_files)
+and a.tablespace_name not like 'UNDO%'
+order by "FREE (GB)", "TOTAL ALLOC (GB)" desc,"% USED" desc;
+</code></pre></div></div>
+
+<p>Obs: For non-cdb database replace cdb_ with dba_</p>]]></content><author><name>Rodrigo Correia</name></author><category term="oracle" /><category term="maintenance" /><category term="sql" /><summary type="html"><![CDATA[Query to check tablespace space usage]]></summary></entry><entry><title type="html">Human readable ansible output</title><link href="http://localhost:4000/oracle/rac/2021/03/30/human-readable-ansible-output.html" rel="alternate" type="text/html" title="Human readable ansible output" /><published>2021-03-30T13:00:00+01:00</published><updated>2021-03-30T13:00:00+01:00</updated><id>http://localhost:4000/oracle/rac/2021/03/30/human-readable-ansible-output</id><content type="html" xml:base="http://localhost:4000/oracle/rac/2021/03/30/human-readable-ansible-output.html"><![CDATA[<h3 id="human-readable-ansible-output">Human readable ansible output</h3>
+
+<p>In the current session execute the command below or add it to your .bash_profile/.profile<br />
+<code class="highlighter-rouge">export ANSIBLE_STDOUT_CALLBACK=debug</code></p>
+
+<p><del>Alternatively adding the line below to your <code class="highlighter-rouge">ansible.cfg</code> (default <code class="highlighter-rouge">/etc/ansible/ansible.cfg</code>) also works:<br />
+`stdout_callback = debug</del>`</p>
+
+<p>Alternatively adding the line below to your <code class="highlighter-rouge">ansible.cfg</code> (default <code class="highlighter-rouge">/etc/ansible/ansible.cfg</code>) also works:<br />
+<code class="highlighter-rouge">callback\_result\_format = yaml</code></p>]]></content><author><name>Rodrigo Correia</name></author><category term="oracle" /><category term="rac" /><summary type="html"><![CDATA[Human readable ansible output]]></summary></entry><entry><title type="html">How to remove a network oracle rac 19c</title><link href="http://localhost:4000/oracle/rac/2021/03/30/how-to-remove_network-oracle-rac-19c.html" rel="alternate" type="text/html" title="How to remove a network oracle rac 19c" /><published>2021-03-30T12:00:00+01:00</published><updated>2021-03-30T12:00:00+01:00</updated><id>http://localhost:4000/oracle/rac/2021/03/30/how-to-remove_network-oracle-rac-19c</id><content type="html" xml:base="http://localhost:4000/oracle/rac/2021/03/30/how-to-remove_network-oracle-rac-19c.html"><![CDATA[<h3 id="how-to-remove-a-network-oracle-rac-19c">How to remove a network oracle rac 19c</h3>
+<p>In this tutorial we’re going to remove network 2 configuration from an Oracle RAC cluster.</p>
+
+<h4 id="get-network-info-that-you-want-to-remove">Get network info that you want to remove</h4>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>srvctl config network -netnum 2
+srvctl config scan -netnum 2
+srvctl config scan_listener -all
+srvctl config listener -listener LISTENER_SRV
+srvctl config vip -node db-01
+</code></pre></div></div>
+
+<h4 id="stop-all-network-services-that-were-going-to-remove">Stop all network services that we’re going to remove</h4>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>srvctl stop scan -force -netnum 2 
+srvctl stop listener -listener LISTENER_SRV
+srvctl stop scan_listener -netnum 2
+srvctl stop vip -vip db-01-vip.srv
+srvctl stop vip -vip db-02-vip.srv
+</code></pre></div></div>
+<h4 id="remove-the-services">Remove the services</h4>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>srvctl remove scan_listener -netnum 2
+srvctl remove scan -netnum 2
+srvctl remove listener -listener LISTENER_SRV
+sudo /app/grid/19.3.0/bin/srvctl remove scan -netnum 2 -force
+sudo /app/grid/19.3.0/bin/srvctl remove network -netnum 2 -force
+sudo /app/grid/19.3.0/bin/srvctl remove vip -vip db-01-vip.srv
+sudo /app/grid/19.3.0/bin/srvctl remove vip -vip db-02-vip.srv
+</code></pre></div></div>]]></content><author><name>Rodrigo Correia</name></author><category term="oracle" /><category term="rac" /><summary type="html"><![CDATA[How to remove a network oracle rac 19c In this tutorial we’re going to remove network 2 configuration from an Oracle RAC cluster.]]></summary></entry><entry><title type="html">Import full to pdb with different features installed (Oracle Spatial)</title><link href="http://localhost:4000/oracle/multitenant/2020/09/24/import-full-to-pdb-oracle-spatial-problems.html" rel="alternate" type="text/html" title="Import full to pdb with different features installed (Oracle Spatial)" /><published>2020-09-24T17:00:00+01:00</published><updated>2020-09-24T17:00:00+01:00</updated><id>http://localhost:4000/oracle/multitenant/2020/09/24/import-full-to-pdb-oracle-spatial-problems</id><content type="html" xml:base="http://localhost:4000/oracle/multitenant/2020/09/24/import-full-to-pdb-oracle-spatial-problems.html"><![CDATA[<p>We had a situation where a new pdb(19.6.0.0) was created to receive a import from another database(11.2.0.1) that had Oracle Spatial installed and the target database didn’t.
+Weirdly executing a full import to the pdb “installed” a flawed version of the Spatial feature in the CDB. It appeared in the dba_registry and cdb_registry views, but it was invalid.</p>
+
+<p><a href="/assets/2020-09-24-import-full-to-pdb-oracle-spatial-problems_spatial_invalid.jpeg"><img src="/assets/2020-09-24-import-full-to-pdb-oracle-spatial-problems_spatial_invalid.jpeg" alt="" /></a></p>
+
+<p>After a database restart the PDBs opened in restricted session mode, even PDB$SEED.</p>
+
+<p><a href="/assets/2020-09-24-import-full-to-pdb-oracle-spatial-problems_pdb_restricted_yes.jpeg"><img src="/assets/2020-09-24-import-full-to-pdb-oracle-spatial-problems_pdb_restricted_yes.jpeg" alt="" /></a></p>
+
+<p>In the PDB_PLUG_IN_VIOLATIONS view the message was that the 19.6 [30557433] was wrongly applied, which wasn’t true.</p>
+
+<p><a href="/assets/2020-09-24-import-full-to-pdb-oracle-spatial-problems_patches_errors.jpeg"><img src="/assets/2020-09-24-import-full-to-pdb-oracle-spatial-problems_patches_errors.jpeg" alt="" /></a></p>
+
+<table>
+  <tbody>
+    <tr>
+      <td>24/09/2020 12:25:32.720328000 PM</td>
+      <td>DEV2_PDB</td>
+      <td>SQL Patch</td>
+      <td>ERROR</td>
+      <td>0</td>
+      <td>1</td>
+      <td>19.6.0.0.0 Release_Update 1912171550: APPLY with status WITH ERRORS in the CDB</td>
+      <td>RESOLVED</td>
+      <td>Call datapatch to install in the PDB or the CDB</td>
+      <td>3</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>And also this one in a new PDB we created to test the solution:</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td>24/09/2020 14:48:14.779786000 PM</td>
+      <td>DEV2_PLUG</td>
+      <td>OPTION</td>
+      <td>ERROR</td>
+      <td>0</td>
+      <td>1</td>
+      <td>Database option SDO mismatch: PDB installed version 19.0.0.0.0. CDB installed version NULL.</td>
+      <td>RESOLVED</td>
+      <td>Fix the database option in the PDB or the CDB</td>
+      <td>2</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>These are the steps a I took to solve this problem:<br />
+Remove Spatial from CDB then PDBs (the order matters)</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sqlplus / as sysdba
+
+SHUTDOWN IMMEDIATE;
+STARTUP UPGRADE;
+
+@?/md/admin/mddins.sql
+ALTER SESSION SET "_oracle_script"=true;
+DROP USER MDSYS CASCADE;
+DROP USER MDDATA CASCADE;
+
+SET PAGESIZE 0
+SET FEED OFF
+SPOOL dropsyn.sql
+SELECT 'DROP PUBLIC SYNONYM "' || SYNONYM_NAME || '";' 
+FROM DBA_SYNONYMS 
+WHERE TABLE_OWNER='MDSYS';
+SPOOL OFF;
+@dropsyn.sql
+
+EXEC UTL_RECOMP.RECOMP_PARALLEL(10);
+SELECT count(*) FROM DBA_OBJECTS WHERE STATUS != 'VALID';
+
+SHUTDOWN IMMEDIATE;
+STARTUP;
+exit
+</code></pre></div></div>
+
+<p>And now from the PDB (the same commands worked for the PDB$SEED pdb as well)</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sqlplus / as sysdba
+ALTER PLUGGABLE DATABASE DEV2_PDB CLOSE IMMEDIATE;
+ALTER PLUGGABLE DATABASE DEV2_PDB OPEN RESTRICTED;
+
+ALTER SESSION SET CONTAINER=DEV2_PDB;
+@?/md/admin/mddins.sql
+ALTER SESSION SET "_oracle_script"=true;
+DROP USER MDSYS CASCADE;
+DROP USER MDDATA CASCADE;
+
+SET PAGESIZE 0
+SET FEED OFF
+SPOOL dropsyn.sql
+SELECT 'DROP PUBLIC SYNONYM "' || SYNONYM_NAME || '";', OWNER 
+FROM DBA_SYNONYMS 
+WHERE TABLE_OWNER='MDSYS';
+SPOOL OFF;
+@dropsyn.sql
+
+EXEC UTL_RECOMP.RECOMP_PARALLEL(8);
+SELECT COUNT(*) FROM DBA_OBJECTS WHERE STATUS != 'VALID';
+
+ALTER PLUGGABLE DATABASE DEV2_PDB CLOSE IMMEDIATE;
+ALTER PLUGGABLE DATABASE DEV2_PDB OPEN UPGRADE;
+exit
+</code></pre></div></div>
+
+<p><code class="highlighter-rouge">$ datapatch -verbose -pdbs DEV2_PDB</code></p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sqlplus / as sysdba
+ALTER PLUGGABLE DATABASE DEV2_PDB CLOSE IMMEDIATE;
+ALTER PLUGGABLE DATABASE DEV2_PDB OPEN;
+</code></pre></div></div>
+
+<p><a href="/assets/2020-09-24-import-full-to-pdb-oracle-spatial-problems_pdbs_ok_v1.jpeg"><img src="/assets/2020-09-24-import-full-to-pdb-oracle-spatial-problems_pdbs_ok_v1.jpeg" alt="" /></a></p>]]></content><author><name>Rodrigo Correia</name></author><category term="oracle" /><category term="multitenant" /><summary type="html"><![CDATA[We had a situation where a new pdb(19.6.0.0) was created to receive a import from another database(11.2.0.1) that had Oracle Spatial installed and the target database didn’t. Weirdly executing a full import to the pdb “installed” a flawed version of the Spatial feature in the CDB. It appeared in the dba_registry and cdb_registry views, but it was invalid.]]></summary></entry></feed>

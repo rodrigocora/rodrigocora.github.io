@@ -1,0 +1,26 @@
+I"e<p>Just a simple script o extract the add service command from a working cluster. I needed this because of a request to add the same services to a new cluster in a similar environment.
+I’ll have more requests that I’ll use this script as base. I’ll add them here as soon as they’re done.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ORACLE_UNQNAME=&lt;db_unique_name&gt;
+
+for service_name in `srvctl status service -d ${ORACLE_UNQNAME} | cut -d' ' -f2`; do 
+    srvctl config service -d ${ORACLE_UNQNAME} -s $service_name  | grep -E 'Preferred|Available|Service name' | cut -d' ' -f3 | paste -sd ' ' | while read -r srv_name preferred available; do
+        echo srvctl add service -d ${ORACLE_UNQNAME} -s $srv_name -r ${preferred} -a ${available}
+        echo srvctl start service -d ${ORACLE_UNQNAME} -s $srv_name
+    done
+done
+</code></pre></div></div>
+
+<p>Relocate services to the first preferred instance</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ORACLE_UNQNAME=&lt;db_unique_name&gt;
+
+echo &gt; /tmp/services_list.tmp
+for service_name in `srvctl status service -d ${ORACLE_UNQNAME} | cut -d' ' -f2`; do 
+    srvctl config service -d ${ORACLE_UNQNAME} -s ${service_name}  | grep -E 'Preferred|Available|Service name' | cut -d' ' -f3 | paste -sd ' ' | while read -r srv_name preferred available; do
+        echo srvctl relocate service -d ${ORACLE_UNQNAME} -s $srv_name -i ${preferred} -t `echo ${available} | cut -d, -f1` -f &gt;&gt; /tmp/services_list.tmp
+    done
+done
+cat /tmp/services_list.tmp | sort -k 9
+</code></pre></div></div>
+:ET

@@ -1,0 +1,12 @@
+I"W<p>I’s upgrading a GRID Infrastructure. Everything was ok with the pre-checks. But during the upgrade itself, when I’s asked to run the rootupgrade.sh I faced this error:</p>
+
+<blockquote>
+  <p><code class="highlighter-rouge">CLSRSC-700: Disk group 'facility=0x3622c88' contains invalid characters in its name.</code></p>
+</blockquote>
+
+<p>We’ve no diskgroup with this name nor anything remotly close to this (this characters are not even allowed in the creation)</p>
+
+<p>It’s odd because I’ve run every pre-check I could remember, checked every permission.</p>
+
+<p>to be continued…</p>
+:ET

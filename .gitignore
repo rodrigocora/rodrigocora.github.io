@@ -1,7 +1,15 @@
-_draft
-_site
-.sass-cache
-.jekyll-cache
-.jekyll-metadata
-vendor
-.vscode/settings.json
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Build artifacts
+*.pyc
+__pycache__/
+CONFIG.md

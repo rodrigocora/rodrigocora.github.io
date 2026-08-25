@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Oracle APEX HTTPS Configuration Guide | Yet another DBA Blog</title>
+<meta name="generator" content="Jekyll v4.0.1" />
+<meta property="og:title" content="Oracle APEX HTTPS Configuration Guide" />
+<meta name="author" content="Rodrigo Correia" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Oracle APEX HTTPS Configuration Guide (Google Services)" />
+<meta property="og:description" content="Oracle APEX HTTPS Configuration Guide (Google Services)" />
+<link rel="canonical" href="http://localhost:4000/oracle/wallet/https/apex/2026/03/13/guia_oracle_apex_https.html" />
+<meta property="og:url" content="http://localhost:4000/oracle/wallet/https/apex/2026/03/13/guia_oracle_apex_https.html" />
+<meta property="og:site_name" content="Yet another DBA Blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2026-03-13T10:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Oracle APEX HTTPS Configuration Guide" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Rodrigo Correia"},"dateModified":"2026-03-13T10:00:00+00:00","datePublished":"2026-03-13T10:00:00+00:00","description":"Oracle APEX HTTPS Configuration Guide (Google Services)","headline":"Oracle APEX HTTPS Configuration Guide","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/oracle/wallet/https/apex/2026/03/13/guia_oracle_apex_https.html"},"url":"http://localhost:4000/oracle/wallet/https/apex/2026/03/13/guia_oracle_apex_https.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Yet another DBA Blog" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Yet another DBA Blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Oracle APEX HTTPS Configuration Guide</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2026-03-13T10:00:00+00:00" itemprop="datePublished">Mar 13, 2026
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <h3 id="oracle-apex-https-configuration-guide-google-services">Oracle APEX HTTPS Configuration Guide (Google Services)</h3>
+
+<h4 id="1-infrastructure--os-level-validation-linux-shell">1. Infrastructure &amp; OS Level Validation (Linux Shell)</h4>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 1. Validate if the server has egress access to the URL (Network/DNS/Firewall check)</span>
+curl <span class="nt">-v</span> https://accounts.google.com/.well-known/openid-configuration
+
+<span class="c"># 2. Download certificates</span>
+openssl s_client <span class="nt">-showcerts</span> <span class="nt">-connect</span> accounts.google.com:443 &lt;/dev/null 2&gt;/dev/null | <span class="nb">awk</span> <span class="s1">'/BEGIN CERTIFICATE/{f=1; i++} f{print &gt; ("/tmp/google-" i ".pem")} /END CERTIFICATE/{f=0; close("/tmp/google-" i ".pem")}'</span>
+
+<span class="c"># 3. Create Oracle Wallet if it doesn't exist</span>
+orapki wallet create <span class="nt">-wallet</span> <span class="nv">$ORACLE_HOME</span>/wallet/https_wallet <span class="nt">-auto_login</span> <span class="nt">-pwd</span> MyPassword
+
+<span class="c"># 4. Ensure correct file system permissions</span>
+<span class="nb">chmod </span>600 <span class="nv">$ORACLE_HOME</span>/wallet/https_wallet/<span class="k">*</span>
+
+<span class="c"># 5. Import certificates into the wallet</span>
+orapki wallet add <span class="nt">-wallet</span> <span class="nv">$ORACLE_HOME</span>/wallet/https_wallet <span class="nt">-trusted_cert</span> <span class="nt">-cert</span> /tmp/google-1.pem <span class="nt">-pwd</span> MyPassword
+orapki wallet add <span class="nt">-wallet</span> <span class="nv">$ORACLE_HOME</span>/wallet/https_wallet <span class="nt">-trusted_cert</span> <span class="nt">-cert</span> /tmp/google-2.pem <span class="nt">-pwd</span> MyPassword
+orapki wallet add <span class="nt">-wallet</span> <span class="nv">$ORACLE_HOME</span>/wallet/https_wallet <span class="nt">-trusted_cert</span> <span class="nt">-cert</span> /tmp/google-3.pem <span class="nt">-pwd</span> MyPassword
+
+<span class="c"># 6. Verify imported certificates</span>
+orapki wallet display <span class="nt">-wallet</span> <span class="nv">$ORACLE_HOME</span>/wallet/https_wallet <span class="nt">-pwd</span> <span class="s2">"MyPassword"</span> <span class="nt">-complete</span>
+
+<span class="c"># 7. Extract Serial Number without ":" (Optional)</span>
+orapki wallet display <span class="nt">-wallet</span> <span class="nv">$ORACLE_HOME</span>/wallet/https_wallet <span class="nt">-pwd</span> <span class="s2">"MyPassword"</span> <span class="nt">-complete</span> | <span class="nb">grep </span>Serial | <span class="nb">tr</span> <span class="nt">-d</span> <span class="s1">':'</span>
+
+<span class="c"># 8. Remove incorrect entry from wallet (Optional)</span>
+<span class="c"># If using the serial number, remember to remove the ":" characters</span>
+orapki wallet remove <span class="nt">-wallet</span> <span class="nv">$ORACLE_HOME</span>/wallet/https_wallet <span class="nt">-trusted_cert</span> <span class="nt">-pwd</span> <span class="s2">"MyPassword"</span> <span class="nt">-dn</span> <span class="s2">"CN=accounts.google.com"</span>
+
+<span class="c"># 9. RAC/Cluster Note:</span>
+<span class="c"># Copy the wallet to all cluster nodes, maintaining the exact same path and permissions.</span>
+</code></pre></div></div>
+
+<hr />
+
+<h4 id="2-database--apex-configuration-sqlplsql">2. Database &amp; APEX Configuration (SQL/PLSQL)</h4>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">-- 1. Check current APEX version (Multiple versions might be installed)</span>
+<span class="k">SELECT</span> <span class="n">comp_id</span><span class="p">,</span> <span class="n">comp_name</span><span class="p">,</span> <span class="k">version</span><span class="p">,</span> <span class="n">status</span> 
+<span class="k">FROM</span> <span class="n">dba_registry</span> 
+<span class="k">WHERE</span> <span class="n">comp_id</span> <span class="o">=</span> <span class="s1">'APEX'</span><span class="p">;</span>
+
+<span class="c1">-- Note: The principal_name (e.g., APEX_220200) must match the version returned above.</span>
+<span class="k">SET</span> <span class="n">SERVEROUT</span> <span class="k">ON</span><span class="p">;</span>
+
+<span class="c1">-- 2. Clean up existing ACEs to avoid conflicts</span>
+<span class="k">BEGIN</span>
+  <span class="n">DBMS_NETWORK_ACL_ADMIN</span><span class="p">.</span><span class="n">REMOVE_HOST_ACE</span><span class="p">(</span>
+    <span class="k">host</span>       <span class="o">=&gt;</span> <span class="s1">'accounts.google.com'</span><span class="p">,</span>
+    <span class="n">ace</span>        <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">ace_type</span><span class="p">(</span><span class="n">privilege_list</span> <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">name_list</span><span class="p">(</span><span class="s1">'resolve'</span><span class="p">),</span>
+                             <span class="n">principal_name</span> <span class="o">=&gt;</span> <span class="s1">'APEX_220200'</span><span class="p">,</span>
+                             <span class="n">principal_type</span> <span class="o">=&gt;</span> <span class="n">xs_acl</span><span class="p">.</span><span class="n">ptype_db</span><span class="p">));</span>
+  
+  <span class="n">DBMS_NETWORK_ACL_ADMIN</span><span class="p">.</span><span class="n">REMOVE_HOST_ACE</span><span class="p">(</span>
+    <span class="k">host</span>       <span class="o">=&gt;</span> <span class="s1">'accounts.google.com'</span><span class="p">,</span>
+    <span class="n">lower_port</span> <span class="o">=&gt;</span> <span class="mi">443</span><span class="p">,</span>
+    <span class="n">upper_port</span> <span class="o">=&gt;</span> <span class="mi">443</span><span class="p">,</span>
+    <span class="n">ace</span>        <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">ace_type</span><span class="p">(</span><span class="n">privilege_list</span> <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">name_list</span><span class="p">(</span><span class="s1">'connect'</span><span class="p">),</span>
+                             <span class="n">principal_name</span> <span class="o">=&gt;</span> <span class="s1">'APEX_220200'</span><span class="p">,</span>
+                             <span class="n">principal_type</span> <span class="o">=&gt;</span> <span class="n">xs_acl</span><span class="p">.</span><span class="n">ptype_db</span><span class="p">));</span>                             
+<span class="k">END</span><span class="p">;</span>
+<span class="o">/</span>
+<span class="k">COMMIT</span><span class="p">;</span>
+
+<span class="c1">-- 3. Configure Network ACLs</span>
+<span class="k">BEGIN</span>
+    <span class="n">DBMS_NETWORK_ACL_ADMIN</span><span class="p">.</span><span class="n">APPEND_HOST_ACE</span><span class="p">(</span>
+        <span class="k">host</span>       <span class="o">=&gt;</span> <span class="s1">'*.gstatic.com'</span><span class="p">,</span>
+        <span class="n">ace</span>        <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">ace_type</span><span class="p">(</span><span class="n">privilege_list</span> <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">name_list</span><span class="p">(</span><span class="s1">'resolve'</span><span class="p">),</span>
+                                 <span class="n">principal_name</span> <span class="o">=&gt;</span> <span class="s1">'APEX_220200'</span><span class="p">,</span>
+                                 <span class="n">principal_type</span> <span class="o">=&gt;</span> <span class="n">xs_acl</span><span class="p">.</span><span class="n">ptype_db</span><span class="p">));</span>
+    <span class="n">DBMS_NETWORK_ACL_ADMIN</span><span class="p">.</span><span class="n">APPEND_HOST_ACE</span><span class="p">(</span>
+        <span class="k">host</span>       <span class="o">=&gt;</span> <span class="s1">'*.google.com'</span><span class="p">,</span>
+        <span class="n">ace</span>        <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">ace_type</span><span class="p">(</span><span class="n">privilege_list</span> <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">name_list</span><span class="p">(</span><span class="s1">'resolve'</span><span class="p">),</span>
+                                 <span class="n">principal_name</span> <span class="o">=&gt;</span> <span class="s1">'APEX_220200'</span><span class="p">,</span>
+                                 <span class="n">principal_type</span> <span class="o">=&gt;</span> <span class="n">xs_acl</span><span class="p">.</span><span class="n">ptype_db</span><span class="p">));</span>
+    <span class="n">DBMS_NETWORK_ACL_ADMIN</span><span class="p">.</span><span class="n">APPEND_HOST_ACE</span><span class="p">(</span>
+        <span class="k">host</span>       <span class="o">=&gt;</span> <span class="s1">'*.googleapis.com'</span><span class="p">,</span>
+        <span class="n">ace</span>        <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">ace_type</span><span class="p">(</span><span class="n">privilege_list</span> <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">name_list</span><span class="p">(</span><span class="s1">'resolve'</span><span class="p">),</span>
+                                 <span class="n">principal_name</span> <span class="o">=&gt;</span> <span class="s1">'APEX_220200'</span><span class="p">,</span>
+                                 <span class="n">principal_type</span> <span class="o">=&gt;</span> <span class="n">xs_acl</span><span class="p">.</span><span class="n">ptype_db</span><span class="p">));</span>                             
+    <span class="n">DBMS_NETWORK_ACL_ADMIN</span><span class="p">.</span><span class="n">APPEND_HOST_ACE</span><span class="p">(</span>
+        <span class="k">host</span>       <span class="o">=&gt;</span> <span class="s1">'*.google.com'</span><span class="p">,</span>
+        <span class="n">lower_port</span> <span class="o">=&gt;</span> <span class="mi">443</span><span class="p">,</span>
+        <span class="n">upper_port</span> <span class="o">=&gt;</span> <span class="mi">443</span><span class="p">,</span>
+        <span class="n">ace</span>        <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">ace_type</span><span class="p">(</span><span class="n">privilege_list</span> <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">name_list</span><span class="p">(</span><span class="s1">'connect'</span><span class="p">),</span>
+                                <span class="n">principal_name</span> <span class="o">=&gt;</span> <span class="s1">'APEX_220200'</span><span class="p">,</span>
+                                <span class="n">principal_type</span> <span class="o">=&gt;</span> <span class="n">xs_acl</span><span class="p">.</span><span class="n">ptype_db</span><span class="p">));</span>
+    <span class="n">DBMS_NETWORK_ACL_ADMIN</span><span class="p">.</span><span class="n">APPEND_HOST_ACE</span><span class="p">(</span>
+        <span class="k">host</span>       <span class="o">=&gt;</span> <span class="s1">'*.googleapis.com'</span><span class="p">,</span>
+        <span class="n">lower_port</span> <span class="o">=&gt;</span> <span class="mi">443</span><span class="p">,</span>
+        <span class="n">upper_port</span> <span class="o">=&gt;</span> <span class="mi">443</span><span class="p">,</span>
+        <span class="n">ace</span>        <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">ace_type</span><span class="p">(</span><span class="n">privilege_list</span> <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">name_list</span><span class="p">(</span><span class="s1">'connect'</span><span class="p">),</span>
+                                 <span class="n">principal_name</span> <span class="o">=&gt;</span> <span class="s1">'APEX_220200'</span><span class="p">,</span>
+                                 <span class="n">principal_type</span> <span class="o">=&gt;</span> <span class="n">xs_acl</span><span class="p">.</span><span class="n">ptype_db</span><span class="p">));</span>
+    <span class="n">DBMS_NETWORK_ACL_ADMIN</span><span class="p">.</span><span class="n">APPEND_HOST_ACE</span><span class="p">(</span>
+        <span class="k">host</span>       <span class="o">=&gt;</span> <span class="s1">'*.gstatic.com'</span><span class="p">,</span>
+        <span class="n">lower_port</span> <span class="o">=&gt;</span> <span class="mi">443</span><span class="p">,</span>
+        <span class="n">upper_port</span> <span class="o">=&gt;</span> <span class="mi">443</span><span class="p">,</span>
+        <span class="n">ace</span>        <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">ace_type</span><span class="p">(</span><span class="n">privilege_list</span> <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">name_list</span><span class="p">(</span><span class="s1">'connect'</span><span class="p">),</span>
+                                 <span class="n">principal_name</span> <span class="o">=&gt;</span> <span class="s1">'APEX_220200'</span><span class="p">,</span>
+                                 <span class="n">principal_type</span> <span class="o">=&gt;</span> <span class="n">xs_acl</span><span class="p">.</span><span class="n">ptype_db</span><span class="p">));</span>
+  
+  <span class="c1">-- 4. Grant Wallet permissions (Adjust path to absolute path)</span>
+  <span class="n">DBMS_NETWORK_ACL_ADMIN</span><span class="p">.</span><span class="n">APPEND_WALLET_ACE</span><span class="p">(</span>
+    <span class="n">wallet_path</span> <span class="o">=&gt;</span> <span class="s1">'file:/u01/app/oracle/product/version/dbhome_1/wallet/https_wallet'</span><span class="p">,</span>
+    <span class="n">ace</span>         <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">ace_type</span><span class="p">(</span><span class="n">privilege_list</span> <span class="o">=&gt;</span> <span class="n">xs</span><span class="err">$</span><span class="n">name_list</span><span class="p">(</span><span class="s1">'use_client_certificates'</span><span class="p">),</span>
+                             <span class="n">principal_name</span> <span class="o">=&gt;</span> <span class="s1">'APEX_220200'</span><span class="p">,</span>
+                             <span class="n">principal_type</span> <span class="o">=&gt;</span> <span class="n">xs_acl</span><span class="p">.</span><span class="n">ptype_db</span><span class="p">));</span>
+<span class="k">END</span><span class="p">;</span>
+<span class="o">/</span>
+<span class="k">COMMIT</span><span class="p">;</span>
+
+<span class="c1">-- 5. Session-level Test</span>
+<span class="k">DECLARE</span>
+    <span class="n">l_response</span> <span class="k">CLOB</span><span class="p">;</span>
+<span class="k">BEGIN</span>
+    <span class="n">apex_web_service</span><span class="p">.</span><span class="n">g_request_headers</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">name</span> <span class="p">:</span><span class="o">=</span> <span class="s1">'Content-Type'</span><span class="p">;</span>
+    <span class="n">apex_web_service</span><span class="p">.</span><span class="n">g_request_headers</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">value</span> <span class="p">:</span><span class="o">=</span> <span class="s1">'application/json'</span><span class="p">;</span>
+  
+    <span class="n">l_response</span> <span class="p">:</span><span class="o">=</span> <span class="n">apex_web_service</span><span class="p">.</span><span class="n">make_rest_request</span><span class="p">(</span>
+        <span class="n">p_url</span>         <span class="o">=&gt;</span> <span class="s1">'https://accounts.google.com/.well-known/openid-configuration'</span><span class="p">,</span>
+        <span class="n">p_http_method</span> <span class="o">=&gt;</span> <span class="s1">'GET'</span><span class="p">,</span>
+        <span class="n">p_wallet_path</span> <span class="o">=&gt;</span> <span class="s1">'file:/u01/app/oracle/product/version/dbhome_1/wallet/https_wallet'</span><span class="p">,</span>
+        <span class="n">p_wallet_pwd</span>  <span class="o">=&gt;</span> <span class="s1">'MyPassword'</span>
+    <span class="p">);</span>
+  
+    <span class="n">dbms_output</span><span class="p">.</span><span class="n">put_line</span><span class="p">(</span><span class="n">dbms_lob</span><span class="p">.</span><span class="n">substr</span><span class="p">(</span><span class="n">l_response</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1</span><span class="p">));</span>
+<span class="k">END</span><span class="p">;</span>
+<span class="o">/</span>
+
+<span class="c1">-- 6. Define Global Instance Wallet Parameters</span>
+<span class="k">BEGIN</span>
+    <span class="c1">-- APEX_INSTANCE_ADMIN.SET_PARAMETER('HTTP_PROXY', 'ProxyHost:Port'); -- If proxy is required</span>
+    <span class="n">APEX_INSTANCE_ADMIN</span><span class="p">.</span><span class="n">SET_PARAMETER</span><span class="p">(</span><span class="s1">'WALLET_PATH'</span><span class="p">,</span> <span class="s1">'file:/u01/app/oracle/product/version/dbhome_1/wallet/https_wallet'</span><span class="p">);</span>
+    <span class="n">APEX_INSTANCE_ADMIN</span><span class="p">.</span><span class="n">SET_PARAMETER</span><span class="p">(</span><span class="s1">'WALLET_PWD'</span><span class="p">,</span> <span class="s1">'MyPassword'</span><span class="p">);</span>
+    <span class="k">COMMIT</span><span class="p">;</span>
+<span class="k">END</span><span class="p">;</span>
+<span class="o">/</span>
+
+<span class="c1">-- 7. Final Test using Global Instance Settings</span>
+<span class="k">DECLARE</span>
+    <span class="n">l_response</span> <span class="k">CLOB</span><span class="p">;</span>
+<span class="k">BEGIN</span>
+    <span class="n">apex_web_service</span><span class="p">.</span><span class="n">g_request_headers</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">name</span> <span class="p">:</span><span class="o">=</span> <span class="s1">'Content-Type'</span><span class="p">;</span>
+    <span class="n">apex_web_service</span><span class="p">.</span><span class="n">g_request_headers</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">value</span> <span class="p">:</span><span class="o">=</span> <span class="s1">'application/json'</span><span class="p">;</span>
+  
+    <span class="n">l_response</span> <span class="p">:</span><span class="o">=</span> <span class="n">apex_web_service</span><span class="p">.</span><span class="n">make_rest_request</span><span class="p">(</span>
+        <span class="n">p_url</span>         <span class="o">=&gt;</span> <span class="s1">'https://accounts.google.com/.well-known/openid-configuration'</span><span class="p">,</span>
+        <span class="n">p_http_method</span> <span class="o">=&gt;</span> <span class="s1">'GET'</span>
+    <span class="p">);</span>
+  
+    <span class="n">dbms_output</span><span class="p">.</span><span class="n">put_line</span><span class="p">(</span><span class="n">dbms_lob</span><span class="p">.</span><span class="n">substr</span><span class="p">(</span><span class="n">l_response</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1</span><span class="p">));</span>
+<span class="k">END</span><span class="p">;</span>
+<span class="o">/</span>
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/oracle/wallet/https/apex/2026/03/13/guia_oracle_apex_https.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Yet another DBA Blog</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Rodrigo Correia</li><li><a class="u-email" href="mailto:rodrigo.correia@pm.me">rodrigo.correia@pm.me</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/rodrigocora"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">rodrigocora</span></a></li><li><a href="https://www.linkedin.com/in/rodrigocrafael"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#linkedin"></use></svg> <span class="username">rodrigocrafael</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Just a blog to store some scripts and tutorials.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

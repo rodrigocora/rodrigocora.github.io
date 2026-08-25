@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Share windows ssh-agent keys with wsl2 | Yet another DBA Blog</title>
+<meta name="generator" content="Jekyll v4.0.1" />
+<meta property="og:title" content="Share windows ssh-agent keys with wsl2" />
+<meta name="author" content="Rodrigo Correia" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="1. O problema: Isolamento do SSH Agent O OpenSSH no Windows expõe o agent em um pipe local (\\.\pipe\openssh-ssh-agent). O WSL2 espera um socket Unix (arquivo .sock). A solução é conectar os dois." />
+<meta property="og:description" content="1. O problema: Isolamento do SSH Agent O OpenSSH no Windows expõe o agent em um pipe local (\\.\pipe\openssh-ssh-agent). O WSL2 espera um socket Unix (arquivo .sock). A solução é conectar os dois." />
+<link rel="canonical" href="http://localhost:4000/windows/ssh-agent/linux/wsl2/ssh/2026/06/15/ssh-agent_wsl2.html" />
+<meta property="og:url" content="http://localhost:4000/windows/ssh-agent/linux/wsl2/ssh/2026/06/15/ssh-agent_wsl2.html" />
+<meta property="og:site_name" content="Yet another DBA Blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2026-06-15T13:20:00+01:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Share windows ssh-agent keys with wsl2" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Rodrigo Correia"},"dateModified":"2026-06-15T13:20:00+01:00","datePublished":"2026-06-15T13:20:00+01:00","description":"1. O problema: Isolamento do SSH Agent O OpenSSH no Windows expõe o agent em um pipe local (\\\\.\\pipe\\openssh-ssh-agent). O WSL2 espera um socket Unix (arquivo .sock). A solução é conectar os dois.","headline":"Share windows ssh-agent keys with wsl2","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/windows/ssh-agent/linux/wsl2/ssh/2026/06/15/ssh-agent_wsl2.html"},"url":"http://localhost:4000/windows/ssh-agent/linux/wsl2/ssh/2026/06/15/ssh-agent_wsl2.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Yet another DBA Blog" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Yet another DBA Blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Share windows ssh-agent keys with wsl2 </h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2026-06-15T13:20:00+01:00" itemprop="datePublished">Jun 15, 2026
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <h3 id="1-o-problema-isolamento-do-ssh-agent">1. O problema: Isolamento do SSH Agent</h3>
+<p>O OpenSSH no Windows expõe o agent em um pipe local (<code class="highlighter-rouge">\\.\pipe\openssh-ssh-agent</code>). O WSL2 espera um socket Unix (arquivo <code class="highlighter-rouge">.sock</code>). A solução é conectar os dois.</p>
+
+<h3 id="2-passo-1-baixar-o-npiperelay">2. Passo 1: Baixar o npiperelay</h3>
+<p>O <code class="highlighter-rouge">npiperelay</code> permite que o WSL acesse os pipes do Windows.</p>
+
+<ol>
+  <li>No Windows, crie uma pasta para guardar ferramentas, por exemplo: <code class="highlighter-rouge">C:\tools</code></li>
+  <li>Baixe a versão mais recente do <code class="highlighter-rouge">npiperelay.exe</code> do repositório oficial no GitHub:
+<a href="https://github.com/jstarks/npiperelay/releases">https://github.com/jstarks/npiperelay/releases</a></li>
+  <li>Extraia o arquivo zip e coloque o <code class="highlighter-rouge">npiperelay.exe</code> dentro da pasta <code class="highlighter-rouge">C:\tools</code>.</li>
+</ol>
+
+<h3 id="3-passo-2-instalar-o-socat-no-wsl2">3. Passo 2: Instalar o socat no WSL2</h3>
+<p>O <code class="highlighter-rouge">socat</code> fará o redirecionamento do tráfego do socket Unix para o executável do Windows.</p>
+
+<p>Abra o terminal do WSL2 e execute:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Update package list and install socat</span>
+<span class="nb">sudo </span>apt-get update
+<span class="nb">sudo </span>apt-get <span class="nb">install </span>socat <span class="nt">-y</span>
+</code></pre></div></div>
+
+<h3 id="4-passo-3-configurar-a-ponte-bridge-no-wsl2">4. Passo 3: Configurar a ponte (Bridge) no WSL2</h3>
+<p>Agora vamos dizer ao WSL2 para usar essa ponte sempre que você abrir o terminal.</p>
+
+<ol>
+  <li>No terminal do WSL2, abra o arquivo de configuração do seu shell (geralmente <code class="highlighter-rouge">~/.bashrc</code> ou <code class="highlighter-rouge">~/.zshrc</code>):
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Open bashrc in nano editor</span>
+vi ~/.bashrc
+</code></pre></div>    </div>
+  </li>
+  <li>Adicione o seguinte bloco de código no final do arquivo:
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Define the path to npiperelay.exe on the Windows side</span>
+<span class="nv">NPIPERELAY</span><span class="o">=</span><span class="s2">"/mnt/c/tools/npiperelay.exe"</span>
+   
+<span class="c"># Define where the Unix socket will be created</span>
+<span class="nb">export </span><span class="nv">SSH_AUTH_SOCK</span><span class="o">=</span><span class="nv">$HOME</span>/.ssh/agent.sock
+   
+<span class="c"># Check if socat is already bridging the socket, if not, start it</span>
+<span class="k">if</span> <span class="o">!</span> ps <span class="nt">-x</span> | <span class="nb">grep</span> <span class="nt">-q</span> <span class="s2">"[s]ocat UNIX-LISTEN:</span><span class="nv">$SSH_AUTH_SOCK</span><span class="s2">"</span><span class="p">;</span> <span class="k">then
+    </span><span class="nb">rm</span> <span class="nt">-f</span> <span class="nv">$SSH_AUTH_SOCK</span>
+    <span class="o">(</span>setsid socat UNIX-LISTEN:<span class="nv">$SSH_AUTH_SOCK</span>,fork,umask<span class="o">=</span>077 EXEC:<span class="s2">"</span><span class="nv">$NPIPERELAY</span><span class="s2"> -ei -s //./pipe/openssh-ssh-agent"</span>,pipes &amp;<span class="o">)</span> <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+<span class="k">fi</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>Salve e saia.</p>
+  </li>
+  <li>Recarregue a configuração executando:
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Reload bash configuration</span>
+<span class="nb">source</span> ~/.bashrc
+</code></pre></div>    </div>
+  </li>
+</ol>
+
+<p><strong>Teste:</strong>
+Agora, digite o comando abaixo no WSL2. Ele deve listar as chaves que foram inseridas pelo KeePassXC:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># List keys currently loaded in the SSH agent</span>
+ssh-add <span class="nt">-l</span>
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/windows/ssh-agent/linux/wsl2/ssh/2026/06/15/ssh-agent_wsl2.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Yet another DBA Blog</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Rodrigo Correia</li><li><a class="u-email" href="mailto:rodrigo.correia@pm.me">rodrigo.correia@pm.me</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/rodrigocora"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">rodrigocora</span></a></li><li><a href="https://www.linkedin.com/in/rodrigocrafael"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#linkedin"></use></svg> <span class="username">rodrigocrafael</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Just a blog to store some scripts and tutorials.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
