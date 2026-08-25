@@ -1,0 +1,80 @@
+---
+- name: Install Jekyll prerequisites
+  hosts: localhost
+  become: false
+  vars:
+    jekyll_project_path: /home/user/git_repos/rodrigocora.github.io
+
+  tasks:
+
+    - name: Install required packages
+      become: true
+      package:
+        name:
+          - ruby
+          - ruby-devel
+          - openssl-devel
+          - redhat-rpm-config
+          - gcc-c++
+          - "@development-tools"
+          - libsass-devel
+        state: present
+
+    - name: Update system RubyGems core
+      shell: /usr/bin/gem update --system
+      become: true
+
+    - name: Find rubygems-update directory
+      find:
+        paths: /usr/local/share/gems/gems
+        patterns: rubygems-update*
+        file_type: directory
+      register: rubygems_dir
+      become: true
+
+    - name: Overwrite old system gem binary with the updated version
+      copy:
+        src: "{{ rubygems_dir.files[0].path }}/exe/gem"
+        dest: /usr/bin/gem
+        remote_src: true
+      become: true
+
+    - name: Install jekyll and bundler gems (system-wide)
+      shell: /usr/bin/gem install jekyll bundler csv logger
+      become: true
+
+    - name: Remove old user-level shim binaries
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - ~/bin/bundle
+        - ~/.local/bin/bundle
+        - ~/bin/jekyll
+        - ~/.local/bin/jekyll
+        - /home/user/bin/bundle
+        - /home/user/bin/jekyll
+      become: true
+
+    - name: Update Gemfile.lock bundler version
+      shell: bundle update --bundler
+      args:
+        chdir: "{{ jekyll_project_path }}"
+      become: false
+
+    - name: Install project specific dependencies (Gemfile)
+      shell: bundle install
+      args:
+        chdir: "{{ jekyll_project_path }}"
+      become: false
+
+    - name: Compile sassc native extension
+      shell: |
+        sassc_dir=$(find /home/user/.local/share/gem/ruby -maxdepth 3 -name "sassc-*" -type d | head -1)
+        if [ -n "$sassc_dir" ] && [ -f "$sassc_dir/ext/extconf.rb" ]; then
+          cd "$sassc_dir/ext" && ruby extconf.rb && make
+        fi
+      args:
+        chdir: "{{ jekyll_project_path }}"
+      become: false
+      changed_when: true
