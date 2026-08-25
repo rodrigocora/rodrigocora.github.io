@@ -11,5 +11,8 @@ update: 2021-03-30 12:00:00 +0000
 In the current session execute the command below or add it to your .bash_profile/.profile  
 `export ANSIBLE_STDOUT_CALLBACK=debug`
 
+~~Alternatively adding the line below to your `ansible.cfg` (default `/etc/ansible/ansible.cfg`) also works:  
+`stdout_callback = debug~~`
+
 Alternatively adding the line below to your `ansible.cfg` (default `/etc/ansible/ansible.cfg`) also works:  
-`stdout_callback = debug`
+`callback_result_format = yaml`

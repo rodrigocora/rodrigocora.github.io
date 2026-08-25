@@ -1,13 +1,12 @@
 ---
 layout: post
-title:  "Env file example"
+title:  "Environment file example"
 date:   2020-04-23 12:20:00 +0000
-categories: oracle rac
+categories: linux .bash_profile .bashrc oracle rac
 update: 2020-04-23 12:20:00 +0000
 ---
 
 We use files with content like this to load the environment variables needed to work in a local instance of oracle database.
-
 
 ```
 export ORACLE_SID=ORCL1

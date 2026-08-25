@@ -18,7 +18,6 @@ WHERE
     AND KTUXEUSN = SUBSTR('transaction_id', 1, INSTR('transaction_id', '.') - 1);
 ```
 
-
 Steps to insert a dummy entry in the pending_trans$ and pending_sessions$ tables to be able to commit or rollback the said transaction
 
 ```
