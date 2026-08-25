@@ -12,4 +12,3 @@ Thumbs.db
 # Build artifacts
 *.pyc
 __pycache__/
-CONFIG.md

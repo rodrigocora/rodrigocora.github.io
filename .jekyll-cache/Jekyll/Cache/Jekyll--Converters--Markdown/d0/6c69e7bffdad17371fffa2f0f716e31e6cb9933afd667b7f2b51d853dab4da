@@ -1,0 +1,20 @@
+I"<h3 id="usar-a-diretiva-include-no-windows-recomendado">Usar a diretiva <code class="highlighter-rouge">Include</code> no Windows (Recomendado)</h3>
+
+<p>O cliente OpenSSH embutido no Windows suporta a diretiva <code class="highlighter-rouge">Include</code>, inclusive com caminhos de rede (UNC). Isso evita problemas de permissões no Windows.</p>
+
+<ol>
+  <li>Abra o PowerShell ou o Bloco de Notas no Windows.</li>
+  <li>Edite o arquivo de configuração SSH do Windows:
+    <div class="language-powershell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Open Windows SSH config in notepad</span><span class="w">
+</span><span class="n">notepad</span><span class="w"> </span><span class="nv">$</span><span class="nn">env</span><span class="p">:</span><span class="nv">USERPROFILE</span><span class="nx">\.ssh\config</span><span class="w">
+</span></code></pre></div>    </div>
+  </li>
+  <li>Adicione a seguinte linha no topo do arquivo (ajustando para o seu caminho real):
+    <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code># Include WSL2 SSH config as primary
+Include \\wsl.localhost\Ubuntu\home\&lt;SeuUsuarioLinux&gt;\.ssh\config
+</code></pre></div>    </div>
+  </li>
+  <li>Salve e feche o arquivo.</li>
+</ol>
+
+:ET

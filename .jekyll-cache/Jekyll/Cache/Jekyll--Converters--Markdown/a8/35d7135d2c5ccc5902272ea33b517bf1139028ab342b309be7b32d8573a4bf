@@ -1,0 +1,61 @@
+I".<h3 id="1-o-problema-isolamento-do-ssh-agent">1. O problema: Isolamento do SSH Agent</h3>
+<p>O OpenSSH no Windows expõe o agent em um pipe local (<code class="highlighter-rouge">\\.\pipe\openssh-ssh-agent</code>). O WSL2 espera um socket Unix (arquivo <code class="highlighter-rouge">.sock</code>). A solução é conectar os dois.</p>
+
+<h3 id="2-passo-1-baixar-o-npiperelay">2. Passo 1: Baixar o npiperelay</h3>
+<p>O <code class="highlighter-rouge">npiperelay</code> permite que o WSL acesse os pipes do Windows.</p>
+
+<ol>
+  <li>No Windows, crie uma pasta para guardar ferramentas, por exemplo: <code class="highlighter-rouge">C:\tools</code></li>
+  <li>Baixe a versão mais recente do <code class="highlighter-rouge">npiperelay.exe</code> do repositório oficial no GitHub:
+<a href="https://github.com/jstarks/npiperelay/releases">https://github.com/jstarks/npiperelay/releases</a></li>
+  <li>Extraia o arquivo zip e coloque o <code class="highlighter-rouge">npiperelay.exe</code> dentro da pasta <code class="highlighter-rouge">C:\tools</code>.</li>
+</ol>
+
+<h3 id="3-passo-2-instalar-o-socat-no-wsl2">3. Passo 2: Instalar o socat no WSL2</h3>
+<p>O <code class="highlighter-rouge">socat</code> fará o redirecionamento do tráfego do socket Unix para o executável do Windows.</p>
+
+<p>Abra o terminal do WSL2 e execute:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Update package list and install socat</span>
+<span class="nb">sudo </span>apt-get update
+<span class="nb">sudo </span>apt-get <span class="nb">install </span>socat <span class="nt">-y</span>
+</code></pre></div></div>
+
+<h3 id="4-passo-3-configurar-a-ponte-bridge-no-wsl2">4. Passo 3: Configurar a ponte (Bridge) no WSL2</h3>
+<p>Agora vamos dizer ao WSL2 para usar essa ponte sempre que você abrir o terminal.</p>
+
+<ol>
+  <li>No terminal do WSL2, abra o arquivo de configuração do seu shell (geralmente <code class="highlighter-rouge">~/.bashrc</code> ou <code class="highlighter-rouge">~/.zshrc</code>):
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Open bashrc in nano editor</span>
+vi ~/.bashrc
+</code></pre></div>    </div>
+  </li>
+  <li>Adicione o seguinte bloco de código no final do arquivo:
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Define the path to npiperelay.exe on the Windows side</span>
+<span class="nv">NPIPERELAY</span><span class="o">=</span><span class="s2">"/mnt/c/tools/npiperelay.exe"</span>
+   
+<span class="c"># Define where the Unix socket will be created</span>
+<span class="nb">export </span><span class="nv">SSH_AUTH_SOCK</span><span class="o">=</span><span class="nv">$HOME</span>/.ssh/agent.sock
+   
+<span class="c"># Check if socat is already bridging the socket, if not, start it</span>
+<span class="k">if</span> <span class="o">!</span> ps <span class="nt">-x</span> | <span class="nb">grep</span> <span class="nt">-q</span> <span class="s2">"[s]ocat UNIX-LISTEN:</span><span class="nv">$SSH_AUTH_SOCK</span><span class="s2">"</span><span class="p">;</span> <span class="k">then
+    </span><span class="nb">rm</span> <span class="nt">-f</span> <span class="nv">$SSH_AUTH_SOCK</span>
+    <span class="o">(</span>setsid socat UNIX-LISTEN:<span class="nv">$SSH_AUTH_SOCK</span>,fork,umask<span class="o">=</span>077 EXEC:<span class="s2">"</span><span class="nv">$NPIPERELAY</span><span class="s2"> -ei -s //./pipe/openssh-ssh-agent"</span>,pipes &amp;<span class="o">)</span> <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+<span class="k">fi</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>Salve e saia.</p>
+  </li>
+  <li>Recarregue a configuração executando:
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Reload bash configuration</span>
+<span class="nb">source</span> ~/.bashrc
+</code></pre></div>    </div>
+  </li>
+</ol>
+
+<p><strong>Teste:</strong>
+Agora, digite o comando abaixo no WSL2. Ele deve listar as chaves que foram inseridas pelo KeePassXC:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># List keys currently loaded in the SSH agent</span>
+ssh-add <span class="nt">-l</span>
+</code></pre></div></div>
+:ET

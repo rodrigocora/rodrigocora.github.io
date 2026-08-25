@@ -1,0 +1,3 @@
+I"Q<h3 id="1-o-problema-isolamento-do-ssh-agent">1. O problema: Isolamento do SSH Agent</h3>
+<p>O OpenSSH no Windows expõe o agent em um pipe local (<code class="highlighter-rouge">\\.\pipe\openssh-ssh-agent</code>). O WSL2 espera um socket Unix (arquivo <code class="highlighter-rouge">.sock</code>). A solução é conectar os dois.</p>
+:ET

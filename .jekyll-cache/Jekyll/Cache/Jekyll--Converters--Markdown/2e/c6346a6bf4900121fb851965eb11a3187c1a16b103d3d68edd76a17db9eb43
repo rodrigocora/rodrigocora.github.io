@@ -1,0 +1,25 @@
+I"F<h3 id="procedure-to-run-the-tuning-advisor-on-a-given-sql_id">Procedure to run the Tuning Advisor on a given sql_id</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SET SERVEROUTPUT ON
+DECLARE
+  v_sql_id VARCHAR2(100) := 'xxxxxxxxxxxxx';
+  l_sql_tune_task_id  VARCHAR2(100);
+  v_tuning_results  clob;
+BEGIN
+  BEGIN
+    l_sql_tune_task_id := DBMS_SQLTUNE.create_tuning_task (
+                            sql_id      =&gt; v_sql_id,
+                            scope       =&gt; DBMS_SQLTUNE.scope_comprehensive,
+                            time_limit  =&gt; 500,
+                            task_name   =&gt; v_sql_id || '_tuning',
+                            description =&gt; 'Tuning task1 for statement ' || v_sql_id);
+  END;
+  BEGIN
+    DBMS_SQLTUNE.execute_tuning_task(task_name =&gt; v_sql_id || '_tuning');
+    select dbms_sqltune.report_tuning_task(v_sql_id || '_tuning') into v_tuning_results from dual;
+    DBMS_OUTPUT.put_line(v_tuning_results);
+    dbms_sqltune.drop_tuning_task(v_sql_id || '_tuning');
+  END;
+END;
+/
+</code></pre></div></div>
+:ET

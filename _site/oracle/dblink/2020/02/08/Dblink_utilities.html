@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Dblink utilities | Yet another DBA Blog</title>
+<meta name="generator" content="Jekyll v4.0.1" />
+<meta property="og:title" content="Dblink utilities" />
+<meta name="author" content="Rodrigo Correia" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Find dblinks being used in materialized views DECLARE TEXT_LOB CLOB; BEGIN FOR X IN ( SELECT OWNER, MVIEW_NAME, QUERY FROM DBA_MVIEWS ) LOOP TEXT_LOB := X.QUERY; TEXT_LOB := REPLACE(REGEXP_SUBSTR(TEXT_LOB, &#39;@(&quot;)?\w+(\.\w+\.\w+(&quot;)?)?&#39;), &#39;&quot;&#39;); IF TEXT_LOB IS NOT NULL THEN DBMS_OUTPUT.PUT_LINE(X.OWNER || &#39;.&#39; || X.MVIEW_NAME || &#39; - &#39; || TEXT_LOB); END IF; END LOOP; END; / Find dblinks being used in others objects SET LINES 200 SET PAGES 0 COL OWNER FORMAT A20 COL NAME FORMAT A40 COL OBJECT_DBLINK FORMAT A50 SELECT DISTINCT OWNER, NAME, REGEXP_SUBSTR(TEXT, &#39;\w+@\w+(\.TIMWE\.COM)?&#39;) AS &quot;OBJECT_DBLINK&quot; FROM DBA_SOURCE WHERE TEXT LIKE &#39;%@%&#39; ORDER BY &quot;OBJECT_DBLINK&quot;;" />
+<meta property="og:description" content="Find dblinks being used in materialized views DECLARE TEXT_LOB CLOB; BEGIN FOR X IN ( SELECT OWNER, MVIEW_NAME, QUERY FROM DBA_MVIEWS ) LOOP TEXT_LOB := X.QUERY; TEXT_LOB := REPLACE(REGEXP_SUBSTR(TEXT_LOB, &#39;@(&quot;)?\w+(\.\w+\.\w+(&quot;)?)?&#39;), &#39;&quot;&#39;); IF TEXT_LOB IS NOT NULL THEN DBMS_OUTPUT.PUT_LINE(X.OWNER || &#39;.&#39; || X.MVIEW_NAME || &#39; - &#39; || TEXT_LOB); END IF; END LOOP; END; / Find dblinks being used in others objects SET LINES 200 SET PAGES 0 COL OWNER FORMAT A20 COL NAME FORMAT A40 COL OBJECT_DBLINK FORMAT A50 SELECT DISTINCT OWNER, NAME, REGEXP_SUBSTR(TEXT, &#39;\w+@\w+(\.TIMWE\.COM)?&#39;) AS &quot;OBJECT_DBLINK&quot; FROM DBA_SOURCE WHERE TEXT LIKE &#39;%@%&#39; ORDER BY &quot;OBJECT_DBLINK&quot;;" />
+<link rel="canonical" href="http://localhost:4000/oracle/dblink/2020/02/08/Dblink_utilities.html" />
+<meta property="og:url" content="http://localhost:4000/oracle/dblink/2020/02/08/Dblink_utilities.html" />
+<meta property="og:site_name" content="Yet another DBA Blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-02-08T20:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Dblink utilities" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Rodrigo Correia"},"dateModified":"2020-02-08T20:00:00+00:00","datePublished":"2020-02-08T20:00:00+00:00","description":"Find dblinks being used in materialized views DECLARE TEXT_LOB CLOB; BEGIN FOR X IN ( SELECT OWNER, MVIEW_NAME, QUERY FROM DBA_MVIEWS ) LOOP TEXT_LOB := X.QUERY; TEXT_LOB := REPLACE(REGEXP_SUBSTR(TEXT_LOB, &#39;@(&quot;)?\\w+(\\.\\w+\\.\\w+(&quot;)?)?&#39;), &#39;&quot;&#39;); IF TEXT_LOB IS NOT NULL THEN DBMS_OUTPUT.PUT_LINE(X.OWNER || &#39;.&#39; || X.MVIEW_NAME || &#39; - &#39; || TEXT_LOB); END IF; END LOOP; END; / Find dblinks being used in others objects SET LINES 200 SET PAGES 0 COL OWNER FORMAT A20 COL NAME FORMAT A40 COL OBJECT_DBLINK FORMAT A50 SELECT DISTINCT OWNER, NAME, REGEXP_SUBSTR(TEXT, &#39;\\w+@\\w+(\\.TIMWE\\.COM)?&#39;) AS &quot;OBJECT_DBLINK&quot; FROM DBA_SOURCE WHERE TEXT LIKE &#39;%@%&#39; ORDER BY &quot;OBJECT_DBLINK&quot;;","headline":"Dblink utilities","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/oracle/dblink/2020/02/08/Dblink_utilities.html"},"url":"http://localhost:4000/oracle/dblink/2020/02/08/Dblink_utilities.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Yet another DBA Blog" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Yet another DBA Blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Dblink utilities</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2020-02-08T20:00:00+00:00" itemprop="datePublished">Feb 8, 2020
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <h4 id="find-dblinks-being-used-in-materialized-views">Find dblinks being used in materialized views</h4>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>DECLARE
+    TEXT_LOB CLOB;
+BEGIN
+    FOR X IN (
+        SELECT
+            OWNER,
+            MVIEW_NAME,
+            QUERY
+        FROM
+            DBA_MVIEWS
+    ) LOOP
+        TEXT_LOB := X.QUERY;
+        TEXT_LOB := REPLACE(REGEXP_SUBSTR(TEXT_LOB, '@(")?\w+(\.\w+\.\w+(")?)?'), '"');
+        IF TEXT_LOB IS NOT NULL THEN
+            DBMS_OUTPUT.PUT_LINE(X.OWNER
+                                 || '.'
+                                 || X.MVIEW_NAME
+                                 || ' - '
+                                 || TEXT_LOB);
+        END IF;
+
+    END LOOP;
+END;
+/
+</code></pre></div></div>
+
+<h4 id="find-dblinks-being-used-in-others-objects">Find dblinks being used in others objects</h4>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SET LINES 200
+SET PAGES 0
+COL OWNER FORMAT A20
+COL NAME FORMAT A40
+COL OBJECT_DBLINK FORMAT A50
+
+SELECT DISTINCT
+    OWNER,
+    NAME,
+    REGEXP_SUBSTR(TEXT, '\w+@\w+(\.TIMWE\.COM)?') AS "OBJECT_DBLINK"
+FROM
+    DBA_SOURCE
+WHERE
+    TEXT LIKE '%@%'
+ORDER BY
+    "OBJECT_DBLINK";
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/oracle/dblink/2020/02/08/Dblink_utilities.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Yet another DBA Blog</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Rodrigo Correia</li><li><a class="u-email" href="mailto:rodrigo.correia@pm.me">rodrigo.correia@pm.me</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/rodrigocora"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">rodrigocora</span></a></li><li><a href="https://www.linkedin.com/in/rodrigocrafael"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#linkedin"></use></svg> <span class="username">rodrigocrafael</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Just a blog to store some scripts and tutorials.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

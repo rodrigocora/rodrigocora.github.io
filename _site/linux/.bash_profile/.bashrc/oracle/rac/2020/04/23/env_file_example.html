@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Environment file example | Yet another DBA Blog</title>
+<meta name="generator" content="Jekyll v4.0.1" />
+<meta property="og:title" content="Environment file example" />
+<meta name="author" content="Rodrigo Correia" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="We use files with content like this to load the environment variables needed to work in a local instance of oracle database. export ORACLE_SID=ORCL1 export ORACLE_UNQNAME=ORCL export ORACLE_BASE=/u01/app/oracle export ORACLE_HOME=$ORACLE_BASE/product/19.0.0/dbhome_1 export PATH=$ORACLE_HOME/bin:$ORACLE_HOME/OPatch:$PATH export CRS_HOME=/u01/app/19.0.0/grid export NLS_LANG=American_America.AL32UTF8 ORACLE_UNQNAME_LOWER=`echo $ORACLE_UNQNAME | tr &#39;[:upper:]&#39; &#39;[:lower:]&#39;` alias bdump=&#39;cd /u01/app/oracle/diag/rdbms/$ORACLE_UNQNAME_LOWER/&#39;$ORACLE_SID&#39;/trace&#39; alias alert=&#39;tail -100f /u01/app/oracle/diag/rdbms/$ORACLE_UNQNAME_LOWER/&#39;$ORACLE_SID&#39;/trace/alert_&#39;$ORACLE_SID&#39;.log&#39;" />
+<meta property="og:description" content="We use files with content like this to load the environment variables needed to work in a local instance of oracle database. export ORACLE_SID=ORCL1 export ORACLE_UNQNAME=ORCL export ORACLE_BASE=/u01/app/oracle export ORACLE_HOME=$ORACLE_BASE/product/19.0.0/dbhome_1 export PATH=$ORACLE_HOME/bin:$ORACLE_HOME/OPatch:$PATH export CRS_HOME=/u01/app/19.0.0/grid export NLS_LANG=American_America.AL32UTF8 ORACLE_UNQNAME_LOWER=`echo $ORACLE_UNQNAME | tr &#39;[:upper:]&#39; &#39;[:lower:]&#39;` alias bdump=&#39;cd /u01/app/oracle/diag/rdbms/$ORACLE_UNQNAME_LOWER/&#39;$ORACLE_SID&#39;/trace&#39; alias alert=&#39;tail -100f /u01/app/oracle/diag/rdbms/$ORACLE_UNQNAME_LOWER/&#39;$ORACLE_SID&#39;/trace/alert_&#39;$ORACLE_SID&#39;.log&#39;" />
+<link rel="canonical" href="http://localhost:4000/linux/.bash_profile/.bashrc/oracle/rac/2020/04/23/env_file_example.html" />
+<meta property="og:url" content="http://localhost:4000/linux/.bash_profile/.bashrc/oracle/rac/2020/04/23/env_file_example.html" />
+<meta property="og:site_name" content="Yet another DBA Blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-04-23T13:20:00+01:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Environment file example" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Rodrigo Correia"},"dateModified":"2020-04-23T13:20:00+01:00","datePublished":"2020-04-23T13:20:00+01:00","description":"We use files with content like this to load the environment variables needed to work in a local instance of oracle database. export ORACLE_SID=ORCL1 export ORACLE_UNQNAME=ORCL export ORACLE_BASE=/u01/app/oracle export ORACLE_HOME=$ORACLE_BASE/product/19.0.0/dbhome_1 export PATH=$ORACLE_HOME/bin:$ORACLE_HOME/OPatch:$PATH export CRS_HOME=/u01/app/19.0.0/grid export NLS_LANG=American_America.AL32UTF8 ORACLE_UNQNAME_LOWER=`echo $ORACLE_UNQNAME | tr &#39;[:upper:]&#39; &#39;[:lower:]&#39;` alias bdump=&#39;cd /u01/app/oracle/diag/rdbms/$ORACLE_UNQNAME_LOWER/&#39;$ORACLE_SID&#39;/trace&#39; alias alert=&#39;tail -100f /u01/app/oracle/diag/rdbms/$ORACLE_UNQNAME_LOWER/&#39;$ORACLE_SID&#39;/trace/alert_&#39;$ORACLE_SID&#39;.log&#39;","headline":"Environment file example","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/linux/.bash_profile/.bashrc/oracle/rac/2020/04/23/env_file_example.html"},"url":"http://localhost:4000/linux/.bash_profile/.bashrc/oracle/rac/2020/04/23/env_file_example.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Yet another DBA Blog" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Yet another DBA Blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Environment file example</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2020-04-23T13:20:00+01:00" itemprop="datePublished">Apr 23, 2020
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>We use files with content like this to load the environment variables needed to work in a local instance of oracle database.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>export ORACLE_SID=ORCL1
+export ORACLE_UNQNAME=ORCL
+export ORACLE_BASE=/u01/app/oracle
+export ORACLE_HOME=$ORACLE_BASE/product/19.0.0/dbhome_1
+export PATH=$ORACLE_HOME/bin:$ORACLE_HOME/OPatch:$PATH
+
+export CRS_HOME=/u01/app/19.0.0/grid
+export NLS_LANG=American_America.AL32UTF8
+
+ORACLE_UNQNAME_LOWER=`echo $ORACLE_UNQNAME | tr '[:upper:]' '[:lower:]'`
+alias bdump='cd /u01/app/oracle/diag/rdbms/$ORACLE_UNQNAME_LOWER/'$ORACLE_SID'/trace'
+alias alert='tail -100f /u01/app/oracle/diag/rdbms/$ORACLE_UNQNAME_LOWER/'$ORACLE_SID'/trace/alert_'$ORACLE_SID'.log'
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/linux/.bash_profile/.bashrc/oracle/rac/2020/04/23/env_file_example.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Yet another DBA Blog</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Rodrigo Correia</li><li><a class="u-email" href="mailto:rodrigo.correia@pm.me">rodrigo.correia@pm.me</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/rodrigocora"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">rodrigocora</span></a></li><li><a href="https://www.linkedin.com/in/rodrigocrafael"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#linkedin"></use></svg> <span class="username">rodrigocrafael</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Just a blog to store some scripts and tutorials.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

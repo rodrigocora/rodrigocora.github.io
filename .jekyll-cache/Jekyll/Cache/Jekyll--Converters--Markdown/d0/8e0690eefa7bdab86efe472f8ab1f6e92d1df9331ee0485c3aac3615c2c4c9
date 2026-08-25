@@ -1,0 +1,66 @@
+I"�<p>Generate trace file to identify performance issues:</p>
+
+<p>Set an identifier to the session:</p>
+
+<p><code class="highlighter-rouge">ALTER SESSION SET TRACEFILE_IDENTIFIER='&lt;SOMETHING&gt;';</code></p>
+
+<p>Enable trace to the current session:</p>
+
+<p><code class="highlighter-rouge">ALTER SESSION SET SQL_TRACE = TRUE;</code></p>
+
+<p>Improve the file readability</p>
+
+<p><code class="highlighter-rouge">TKPROF &lt;src_file.trc&gt;  &lt;output_file.txt&gt;</code></p>
+
+<p>Disable trace to the current session:</p>
+
+<p><code class="highlighter-rouge">ALTER SESSION SET SQL_TRACE = FALSE;</code></p>
+
+<p>Enable trace to another user session:</p>
+
+<p><code class="highlighter-rouge">EXEC SYS.DBMS_SYSTEM.SET_SQL_TRACE_IN_SESSION( &lt;O_SID&gt; ,  &lt;O_SERIAL#&gt; ,TRUE);</code></p>
+
+<p>Disable trace to another user session:</p>
+
+<p><code class="highlighter-rouge">EXEC SYS.DBMS_SYSTEM.SET_SQL_TRACE_IN_SESSION( &lt;O_SID&gt; ,  &lt;O_SERIAL#&gt; ,FALSE);</code></p>
+
+<p>Disable trace to another user session with more details:</p>
+
+<p><code class="highlighter-rouge">EXEC SYS.DBMS_SYSTEM.SET_EV( &lt;SID&gt;, &lt;SERIAL#&gt;,10046,12, '');</code></p>
+
+<p>Find the trace file:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SELECT a.sid,  
+    a.serial#,  
+    a.username,  
+    a.osuser,  
+    b.spid,  
+    b.TRACEFILE  
+FROM v$session a,  
+    gv$process b  
+WHERE 
+    a.paddr  = b.addr  
+    AND a.username = '&lt;USERNAME&gt;'  
+ORDER BY a.sid;  
+</code></pre></div></div>
+
+<p>Trigger to activate trace for a given username</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CREATE OR REPLACE TRIGGER USER_TRACE_TRG
+AFTER LOGON ON DATABASE
+BEGIN
+    IF USER = '&lt;USERNAME&gt;'
+  THEN
+    execute immediate 'ALTER SESSION SET TRACEFILE_IDENTIFIER =''SQL_TRACE_''';
+    execute immediate 'ALTER SESSION SET SQL_TRACE=TRUE';
+    execute immediate 'alter session set events ''10046 trace name context forever,level 12''';
+    execute immediate 'alter session set statistics_level=all';
+    execute immediate 'alter session set max_dump_file_size = unlimited';
+  END IF;
+EXCEPTION
+WHEN OTHERS THEN
+NULL;
+END;
+/
+</code></pre></div></div>
+:ET
