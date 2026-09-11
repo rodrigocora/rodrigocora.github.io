@@ -4,11 +4,7 @@ title:  "ORA-28040: No matching authentication protocol"
 date:   2020-02-29 10:00:00 +0000
 categories: oracle session jdbc
 ---
-
-
 I order to prevent the error `ORA-28040: No matching authentication protocol` that I've faced after upgrading some databases I've looked around and found [here](http://marcel.vandewaters.nl/oracle/database-oracle/determine-versions-of-connected-oracle-clients) a query to identify the version of the client connected to the database. I've created a view as follows to facilate the access to this information.
-
-
 
 ```
 CREATE OR REPLACE VIEW XKSUSECON
