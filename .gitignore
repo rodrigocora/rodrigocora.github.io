@@ -11,5 +11,7 @@ Thumbs.db
 
 # Build artifacts
 *.pyc
-__pycache__/
+**/__pycache__/
 CONFIG.md
+**/.jekyll-cache
+**/.stfolder
