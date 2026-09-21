@@ -10,6 +10,7 @@ Thumbs.db
 .idea/
 
 # Build artifacts
+_site/
 *.pyc
 **/__pycache__/
 CONFIG.md

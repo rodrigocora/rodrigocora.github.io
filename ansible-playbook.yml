@@ -3,7 +3,7 @@
   hosts: localhost
   become: false
   vars:
-    jekyll_project_path: /home/user/git_repos/rodrigocora.github.io
+    jekyll_project_path: /home/user/codebase/rodrigocora.github.io
 
   tasks:
 
