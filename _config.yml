@@ -39,6 +39,7 @@ plugins:
 # Exclude from processing.
 exclude:
   - run_server.sh
+  - build_search.sh
   - AGENTS.md
   - ansible.cfg
   - ansible-playbook.yml

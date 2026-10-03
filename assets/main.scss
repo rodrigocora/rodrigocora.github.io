@@ -4,3 +4,85 @@
 $content-width: 60%;
 
 @import "minima";
+
+/**
+ * tinysearch — inline header search box
+ */
+.ts-search-box {
+  clear: both;
+  width: 100%;
+  position: relative;
+  margin-top: 0.4 * $spacing-unit;
+
+  input[type="search"] {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.45 * $spacing-unit 0.75 * $spacing-unit;
+    font-size: $base-font-size;
+    line-height: 1.4;
+    color: $text-color;
+    background-color: $background-color;
+    border: 1px solid $grey-color-light;
+    border-radius: 4px;
+
+    &:focus {
+      outline: none;
+      border-color: darken($grey-color-light, 14%);
+    }
+  }
+
+  .ts-search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin: 4px 0 0;
+    padding: 4px;
+    list-style: none;
+    text-align: left;
+    background-color: $background-color;
+    border: 1px solid $grey-color-light;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+    z-index: 100;
+    max-height: 70vh;
+    overflow-y: auto;
+
+    li {
+      margin: 0;
+    }
+
+    li a {
+      display: block;
+      padding: 6px 8px;
+      color: $text-color;
+      text-decoration: none;
+      border-radius: 3px;
+
+      &:hover {
+        background-color: lighten($grey-color-light, 5%);
+      }
+    }
+
+    li.ts-active a {
+      background-color: lighten($grey-color-light, 5%);
+    }
+
+    li.ts-status {
+      padding: 6px 8px;
+      color: lighten($text-color, 28%);
+      font-style: italic;
+    }
+
+    .ts-title {
+      display: block;
+      font-weight: 500;
+    }
+
+    .ts-meta {
+      display: block;
+      font-size: 0.85em;
+      color: lighten($text-color, 24%);
+    }
+  }
+}
