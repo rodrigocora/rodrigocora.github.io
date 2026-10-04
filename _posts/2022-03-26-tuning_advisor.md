@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Tuning adivisor procedure"
+title:  "Tuning Advisor procedure"
 date:   2022-03-26 18:00:00 +0000
 categories: oracle performance sql
 ---

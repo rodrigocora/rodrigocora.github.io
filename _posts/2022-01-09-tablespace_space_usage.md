@@ -39,4 +39,4 @@ and a.tablespace_name not like 'UNDO%'
 order by "FREE (GB)", "TOTAL ALLOC (GB)" desc,"% USED" desc;
 ```
 
-Obs: For non-cdb database replace cdb_ with dba_
+Note: for non-CDB databases, replace `cdb_` with `dba_`.

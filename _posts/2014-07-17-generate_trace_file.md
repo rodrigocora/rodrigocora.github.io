@@ -8,11 +8,11 @@ update: 2014-07-17 15:00:00 +0000
 
 Generate trace file to identify performance issues:  
 
-Set an identifier to the session:
+Set an identifier for the session:
 
 `ALTER SESSION SET TRACEFILE_IDENTIFIER='<SOMETHING>';`
 
-Enable trace to the current session:
+Enable tracing for the current session:
 
 `ALTER SESSION SET SQL_TRACE = TRUE;`
 
@@ -20,19 +20,19 @@ Improve the file readability
 
 `TKPROF <src_file.trc>  <output_file.txt>`
 
-Disable trace to the current session:
+Disable tracing for the current session:
 
 `ALTER SESSION SET SQL_TRACE = FALSE;`
 
-Enable trace to another user session:
+Enable tracing for another user's session:
 
 `EXEC SYS.DBMS_SYSTEM.SET_SQL_TRACE_IN_SESSION( <O_SID> ,  <O_SERIAL#> ,TRUE);`
 
-Disable trace to another user session:
+Disable tracing for another user's session:
 
-`EXEC SYS.DBMS_SYSTEM.SET_SQL_TRACE_IN_SESSION( <O_SID> ,  <O_SERIAL#> ,FALSE);`
+`EXEC SYS.DBMS_SYSTEM.SET_SQL_TRACE_IN_SESSION( <O_SID> ,  <O_SERIAL#> ,FALSE);`
 
-Disable trace to another user session with more details:
+Enable tracing for another user's session with more details:
 
 `EXEC SYS.DBMS_SYSTEM.SET_EV( <SID>, <SERIAL#>,10046,12, '');`
 
@@ -53,7 +53,7 @@ WHERE
 ORDER BY a.sid;  
 ```
 
-Trigger to activate trace for a given username
+Trigger to activate tracing for a given username
 
 ```
 CREATE OR REPLACE TRIGGER USER_TRACE_TRG

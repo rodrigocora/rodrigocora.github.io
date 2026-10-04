@@ -52,7 +52,7 @@ FROM dba_registry
 WHERE comp_id = 'APEX';
 
 -- Note: The principal_name (e.g., APEX_220200) must match the version returned above.
-SET SERVEROUT ON;
+SET SERVEROUTPUT ON;
 
 -- 2. Clean up existing ACEs to avoid conflicts
 BEGIN

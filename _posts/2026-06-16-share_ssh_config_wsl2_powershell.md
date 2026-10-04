@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Integrate ssh_config from wsl2 with powershell"
+title:  "Integrate WSL2 ssh_config with Windows PowerShell"
 date:   2026-06-16 12:20:00 +0000
 categories: windows wsl2 linux
 update: 2026-06-16 12:20:00 +0000

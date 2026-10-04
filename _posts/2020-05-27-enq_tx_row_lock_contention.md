@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "enq tx – row lock contention"
+title:  "ENQ: TX - row lock contention"
 date:   2020-05-27 23:00:00 +0000
 categories: oracle rac contention transaction
 update: 2020-05-27 23:00:00 +0000

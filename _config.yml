@@ -29,6 +29,9 @@ url: "https://rodrigocora.github.io/" # the base hostname & protocol for your si
 github_username:  rodrigocora
 linkedin_username:  rodrigocrafael
 
+feed:
+  posts_limit: 23
+
 # Build settings
 theme: minima
 plugins:

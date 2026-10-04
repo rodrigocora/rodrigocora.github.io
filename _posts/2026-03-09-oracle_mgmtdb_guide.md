@@ -5,7 +5,6 @@ date:   2026-03-09 13:00:00 +0000
 categories: oracle performance sql
 ---
 
-```
 # Oracle MGMTDB: The Hidden Brain of Your Grid Infrastructure
 
 The **MGMTDB** (Management Database) is a single-instance Oracle database embedded within your Grid Infrastructure, acting as the central repository for diagnostics, performance metrics, and proactive health monitoring. While often overlooked, it’s the backbone of observability for Oracle clusters—transforming raw telemetry into actionable insights.
@@ -13,7 +12,7 @@ The **MGMTDB** (Management Database) is a single-instance Oracle database embedd
 ---
 
 ## **What Is MGMTDB?**
-MGMTDB is a **Single Instance** Oracle database (SID: `-MGMTDB`) managed by Oracle Clusterware. It stores metadata and diagnostic data collected by Grid Infrastructure services, enabling real-time and historical analysis of cluster health.
+MGMTDB is a **single-instance** Oracle database (SID: `MGMTDB`) managed by Oracle Clusterware. It stores metadata and diagnostic data collected by Grid Infrastructure services, enabling real-time and historical analysis of cluster health.
 
 ### **Key Components Stored in MGMTDB**
 | Component | Purpose |
@@ -34,7 +33,7 @@ Unlike production databases, MGMTDB has unique architectural traits:
 |---------|------------------|
 | **Instance Type** | Single Instance (managed by Oracle Clusterware). |
 | **High Availability** | Runs on one node at a time; fails over automatically if the node crashes. |
-| **Multitenant Structure** | A **CDB** (`-MGMTDB`) with one **PDB** per cluster (e.g., `CHM_MYCLUSTER`). |
+| **Multitenant Structure** | A **CDB** (`MGMTDB`) with one **PDB** per cluster (e.g., `CHM_MYCLUSTER`). |
 | **Storage** | Typically deployed in a dedicated ASM Disk Group (`+MGMT`), but can share `+GRID` or `+DATA`. |
 
 ---
@@ -67,7 +66,7 @@ oclumon manage -repos changereposize 172800
 
 ### **Connecting to MGMTDB (SQL*Plus)**
 ```bash
-export ORACLE_SID=-MGMTDB
+export ORACLE_SID=MGMTDB
 export ORACLE_HOME=$GRID_HOME
 sqlplus / as sysdba
 ```
@@ -197,7 +196,7 @@ MGMTDB can fill up its ASM Disk Group. Mitigation steps:
 
 1. **Check space usage**:
    ```sql
-   -- Connect to -MGMTDB as sysdba
+   -- Connect to MGMTDB as sysdba
    SELECT file_name, bytes/1024/1024 MB FROM dba_data_files;
    ```
 2. **Add space to the Disk Group** (e.g., `+MGMT`).

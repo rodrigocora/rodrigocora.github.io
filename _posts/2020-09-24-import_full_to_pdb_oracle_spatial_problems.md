@@ -7,8 +7,8 @@ update: 2020-09-24 16:00:00 +0000
 ---
 
 
-We had a situation where a new pdb(19.6.0.0) was created to receive a import from another database(11.2.0.1) that had Oracle Spatial installed and the target database didn't.
-Weirdly executing a full import to the pdb "installed" a flawed version of the Spatial feature in the CDB. It appeared in the dba_registry and cdb_registry views, but it was invalid.
+We had a situation where a new PDB (19.6.0.0) was created to receive an import from another database (11.2.0.1) that had Oracle Spatial installed, while the target database didn't.
+Weirdly, executing a full import into the PDB "installed" a flawed version of the Spatial feature in the CDB. It appeared in the dba_registry and cdb_registry views, but it was invalid.
 
 [![](/assets/2020-09-24-import-full-to-pdb-oracle-spatial-problems_spatial_invalid.jpeg)](/assets/2020-09-24-import-full-to-pdb-oracle-spatial-problems_spatial_invalid.jpeg)
 
@@ -16,7 +16,7 @@ After a database restart the PDBs opened in restricted session mode, even PDB$SE
 
 [![](/assets/2020-09-24-import-full-to-pdb-oracle-spatial-problems_pdb_restricted_yes.jpeg)](/assets/2020-09-24-import-full-to-pdb-oracle-spatial-problems_pdb_restricted_yes.jpeg)
 
-In the PDB_PLUG_IN_VIOLATIONS view the message was that the 19.6 [30557433] was wrongly applied, which wasn't true.
+In the PDB_PLUG_IN_VIOLATIONS view, the message was that the 19.6 patch [30557433] had been wrongly applied, which wasn't true.
 
 [![](/assets/2020-09-24-import-full-to-pdb-oracle-spatial-problems_patches_errors.jpeg)](/assets/2020-09-24-import-full-to-pdb-oracle-spatial-problems_patches_errors.jpeg)
 
@@ -27,8 +27,8 @@ In the PDB_PLUG_IN_VIOLATIONS view the message was that the 19.6 [30557433] was 
 
  |24/09/2020 14:48:14.779786000 PM	|DEV2_PLUG	|OPTION	|ERROR	|0	|1	|Database option SDO mismatch: PDB installed version 19.0.0.0.0. CDB installed version NULL.	|RESOLVED	|Fix the database option in the PDB or the CDB	|2|
 
-These are the steps a I took to solve this problem:  
-Remove Spatial from CDB then PDBs (the order matters)
+These are the steps I took to solve this problem:  
+Remove Spatial from the CDB and then from the PDBs (the order matters)
 
 ```
 sqlplus / as sysdba
@@ -58,7 +58,7 @@ STARTUP;
 exit
 ```
 
-And now from the PDB (the same commands worked for the PDB$SEED pdb as well)
+And then from the PDB (the same commands worked for the PDB$SEED PDB as well)
 
 ```
 sqlplus / as sysdba

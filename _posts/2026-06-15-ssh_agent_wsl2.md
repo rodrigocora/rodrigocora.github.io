@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Share windows ssh-agent keys with wsl2 "
+title:  "Share Windows ssh-agent keys with WSL2"
 date:   2026-06-15 12:20:00 +0000
 categories: windows ssh-agent linux wsl2 ssh
 update: 2026-06-15 12:20:00 +0000
@@ -32,7 +32,7 @@ Now we'll tell WSL2 to use this bridge every time you open a terminal.
 
 1. In the WSL2 terminal, open your shell configuration file (usually `~/.bashrc` or `~/.zshrc`):
    ```bash
-   # Open bashrc in nano editor
+   # Open bashrc in vi
    vi ~/.bashrc
    ```
 
