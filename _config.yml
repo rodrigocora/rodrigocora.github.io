@@ -30,7 +30,7 @@ github_username:  rodrigocora
 linkedin_username:  rodrigocrafael
 
 feed:
-  posts_limit: 50s
+  posts_limit: 50
 
 # Build settings
 remote_theme: sighingnow/jekyll-gitbook
