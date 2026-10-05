@@ -2,17 +2,21 @@
 # Only the main Sass file needs front matter (the dashes are enough)
 ---
 $content-width: 60%;
-
-// @import "minima";
+$spacing-unit: 30px;
+$base-font-size: 16px;
+$text-color: #404040;
+$background-color: #fff;
+$grey-color-light: #e7e8e2;
 
 /**
- * tinysearch — inline header search box
+ * tinysearch — floating search box (replaces gitbook search-pro)
  */
 .ts-search-box {
-  clear: both;
-  width: 100%;
-  position: relative;
-  margin-top: 0.4 * $spacing-unit;
+  position: fixed;
+  top: 58px;
+  right: 24px;
+  width: 320px;
+  z-index: 101;
 
   input[type="search"] {
     width: 100%;
@@ -24,6 +28,7 @@ $content-width: 60%;
     background-color: $background-color;
     border: 1px solid $grey-color-light;
     border-radius: 4px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12);
 
     &:focus {
       outline: none;
@@ -84,5 +89,12 @@ $content-width: 60%;
       font-size: 0.85em;
       color: lighten($text-color, 24%);
     }
+  }
+}
+
+@media (max-width: 600px) {
+  .ts-search-box {
+    right: 16px;
+    width: calc(100vw - 32px);
   }
 }
