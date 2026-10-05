@@ -8,7 +8,7 @@
 # For technical reasons, this file is *NOT* reloaded automatically when you use
 # 'bundle exec jekyll serve'. If you change this file, please restart the server process.
 #
-# If you need help with YAML syntax, here are some quick references for you: 
+# If you need help with YAML syntax, here are some quick references for you:
 # https://learn-the-web.algonquindesign.ca/topics/markdown-yaml-cheat-sheet/#yaml
 # https://learnxinyminutes.com/docs/yaml/
 #
@@ -30,10 +30,10 @@ github_username:  rodrigocora
 linkedin_username:  rodrigocrafael
 
 feed:
-  posts_limit: 23
+  posts_limit: 50s
 
 # Build settings
-theme: minima
+remote_theme: sighingnow/jekyll-gitbook
 plugins:
   - jekyll-feed
   - jekyll-sitemap
