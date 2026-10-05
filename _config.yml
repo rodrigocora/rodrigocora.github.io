@@ -29,30 +29,16 @@ url: "https://rodrigocora.github.io/" # the base hostname & protocol for your si
 github_username:  rodrigocora
 linkedin_username:  rodrigocrafael
 
-# Gitbook theme settings (sighingnow/jekyll-gitbook)
-markdown: kramdown
-kramdown:
-  auto_ids: true
-  input: GFM
-  smart_quotes: lsquo,rsquo,ldquo,rdquo
-  toc_levels: 1..6
-  syntax_highlighter: rouge
-  syntax_highlighter_opts:
-    guess_lang: true
-syntax_highlighter_style: colorful
-gitbook_version: 3.2.3
-favicon_path: assets/gitbook/images/favicon.ico
-
 feed:
   posts_limit: 50
 
 # Build settings
-remote_theme: sighingnow/jekyll-gitbook@a7d876936fe650c46eaf9eca92dc7afe0f1e1f17
+# Use the bundled Minima theme so that the standard layout files exist.
+theme: minima
 plugins:
   - jekyll-feed
   - jekyll-sitemap
   - jekyll-seo-tag
-  - jekyll-remote-theme
 
 # Exclude from processing.
 exclude:
