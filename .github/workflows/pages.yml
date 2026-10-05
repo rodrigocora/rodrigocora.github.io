@@ -33,11 +33,6 @@ jobs:
       - name: Build Jekyll site
         run: bundle exec jekyll build
 
-      - name: Generate search WASM
-        run: |
-          docker run --rm -v "$PWD":/app tinysearch/cli:0.11.1 \
-            --release -m wasm -p /app/_site/assets/tinysearch /app/_site/search.json
-
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
