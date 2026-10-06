@@ -39,7 +39,7 @@ kramdown:
   syntax_highlighter: rouge
   syntax_highlighter_opts:
     guess_lang: true
-syntax_highlighter_style: colorful
+syntax_highlighter_style: minima
 gitbook_version: 3.2.3
 favicon_path: assets/gitbook/images/favicon.ico
 
