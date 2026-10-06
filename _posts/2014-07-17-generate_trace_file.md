@@ -38,7 +38,7 @@ Enable tracing for another user's session with more details:
 
 Find the trace file:
 
-```
+```sql
 SELECT a.sid,  
     a.serial#,  
     a.username,  
