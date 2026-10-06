@@ -36,12 +36,15 @@ kramdown:
   input: GFM
   smart_quotes: lsquo,rsquo,ldquo,rdquo
   toc_levels: 1..6
-  syntax_highlighter: rouge
-  syntax_highlighter_opts:
-    guess_lang: true
-syntax_highlighter_style: minima
+  syntax_highlighter: none
 gitbook_version: 3.2.3
 favicon_path: assets/gitbook/images/favicon.ico
+
+extra_css:
+  - assets/highlight/atom-one-dark.min.css
+extra_header_js:
+  - assets/highlight/highlight.min.js
+  - assets/highlight/languages/powershell.min.js
 
 feed:
   posts_limit: 50
